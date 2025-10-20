@@ -16,7 +16,7 @@ from keras import layers
 
 # 15 inputs -> 100 data outputs
 
-df = pd.read_csv('outputs.csv')
+df = pd.read_csv('datasets/outputs.csv')
 df = df.dropna()
 
 x, y = df.iloc[:, :15], df.iloc[:, 15:]

@@ -8,7 +8,7 @@ from tensorflow.keras.layers import Normalization
 from keras.src.optimizers import Adam
 from sklearn.model_selection import train_test_split
 
-df = pd.read_csv('outputs.csv')
+df = pd.read_csv('datasets/outputs.csv')
 
 input_data, output_data = df.iloc[:, :15], df.iloc[:, 15:]
 
