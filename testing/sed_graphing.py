@@ -1,11 +1,11 @@
-from pycubicspline import *
+from libraries.pycubicspline import *
 import matplotlib.pyplot as plt
 import pandas as pd
 import random
 
 random.seed()
 
-data = pd.read_csv('datasets/normalised.csv')
+data = pd.read_csv('../datasets/normalised.csv')
 rows = data.iloc[:, 14:]
 
 x = [0.1, 0.11, 0.121, 0.133, 0.147, 0.161, 0.178, 0.195, 0.215, 0.237, 0.26, 0.286, 0.315, 0.347, 0.382, 0.42, 0.462,
@@ -16,7 +16,8 @@ x = [0.1, 0.11, 0.121, 0.133, 0.147, 0.161, 0.178, 0.195, 0.215, 0.237, 0.26, 0.
      976, 1070, 1180, 1300]
 
 for i in range(5):
-    row = random.randint(1, 99)
+    row = random.randint(1, 35360)
+    print(f"Using row {row}")
     y = rows.iloc[row]
     spline = Spline(x, y)
     rx = np.arange(-2, 1300, 1)

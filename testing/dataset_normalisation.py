@@ -35,7 +35,7 @@ np.set_printoptions(precision=3, suppress=True)
 
 # Read in our csv file
 print("Reading .csv file...")
-data = pd.read_csv('datasets/outputs.csv')
+data = pd.read_csv('../datasets/outputs.csv')
 data = data.drop('ninc', axis=1)
 # Split it into I/O form
 x, y = data.iloc[:, :14], data.iloc[:, 14:]
