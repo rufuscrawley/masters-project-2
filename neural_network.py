@@ -36,19 +36,13 @@ model.add(normalize)
 model.add(keras.layers.Flatten())
 # Tune the number of layers.
 for i in range(4):
-    model.add(
-        keras.layers.Dense(
-            # Tune number of units separately.
-            units=100,
-            activation="relu",
-        )
-    )
-model.add(keras.layers.Dense(100, activation="softmax"))
+    model.add(keras.layers.Dense(units=100, activation="relu"))
+model.add(keras.layers.Dense(100, activation="relu"))
 learning_rate = 0.0001
 model.compile(
     optimizer=keras.optimizers.AdamW(learning_rate=learning_rate),
     loss="mse",
-    metrics=["accuracy", "mae"],
+    metrics=["accuracy"],
 )
 
 print("Building model...")
