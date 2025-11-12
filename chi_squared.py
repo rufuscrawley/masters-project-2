@@ -8,6 +8,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import random
+import scipy.stats as stats
+
+
+def chi_squared_function(set_1, set_2):
+    chi_square = stats.chisquare(set_1, set_2, sum_check=False, ddof=14)
+    print(f"finding {chi_square.statistic} / {chi_square.pvalue}")
+    return chi_square.statistic / chi_square.pvalue
+
 
 random.seed()
 reconstructed_model = keras.models.load_model("models/final_model.keras")
@@ -25,31 +33,33 @@ wavelengths = [0.1, 0.11, 0.121, 0.133, 0.147, 0.161, 0.178, 0.195, 0.215, 0.237
 
 data = pd.read_csv('datasets/normalised.csv')
 
-for i in range(3):
-    ROW = random.randint(1, 35360)
 
-    x, y = data.iloc[:, :14], data.iloc[:, 14:]
-    x_row, y_row = x.iloc[ROW], y.iloc[ROW]
+def graph_test():
+    for i in range(3):
+        ROW = random.randint(1, 35360)
 
-    results = reconstructed_model.predict(np.array([x_row]))
+        x, y = data.iloc[:, :14], data.iloc[:, 14:]
+        x_row, y_row = x.iloc[ROW], y.iloc[ROW]
 
-    chi = 0
-    for index, result in enumerate(results[0]):
-        addition = np.pow(result - y_row[index], 2) / y_row[index]
-        chi += addition
-    print(f"Chi-squared: {chi}")
+        y_row = np.array([y_row])
+        results = reconstructed_model.predict(np.array([x_row]), verbose=0)
 
-    rx = np.arange(-2, 1300, 1)
+        chi = chi_squared_function(results[0], y_row[0])
+        print(f"Chi-squared: {chi}")
 
-    spline = Spline(wavelengths, y_row)
-    ry = [spline.calc(i) for i in rx]
-    plt.plot(rx, ry, label=f'result_{i}')
+        rx = np.arange(-2, 1300, 1)
 
-    spline_pred = Spline(wavelengths, results[0])
-    ry_pred = [spline_pred.calc(i) for i in rx]
-    plt.plot(rx, ry_pred, label=f'pred result_{i}')
+        spline = Spline(wavelengths, y_row[0])
+        ry = [spline.calc(i) for i in rx]
+        plt.plot(rx, ry, label=f'result_{i}')
 
-plt.grid(True)
+        spline_pred = Spline(wavelengths, results[0])
+        ry_pred = [spline_pred.calc(i) for i in rx]
+        plt.plot(rx, ry_pred, label=f'pred result_{i}')
 
-plt.legend()
-plt.show()
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+
+
+graph_test()
