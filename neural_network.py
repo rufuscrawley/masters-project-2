@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
+# TODO Exclude high inclinations
+
 # Read in our csv file
 print("Reading .csv file...")
 data = pd.read_csv('datasets/normalised.csv')
