@@ -21,7 +21,7 @@ x_row, y_row = x.iloc[ROW], y.iloc[ROW]
 
 def chi_optimisor(ga_instance, free_parameters, solution_idx):
     results = reconstructed_model.predict(np.array([free_parameters]), verbose=0)
-    return_value = chi_squared.chi_squared_function(results[0], np.array(y.iloc[ROW]))
+    return_value = chi_squared.reduced_chi_square(results[0], np.array(y.iloc[ROW]))
     print(return_value)
     return -return_value
 

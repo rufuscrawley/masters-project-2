@@ -11,10 +11,9 @@ import random
 import scipy.stats as stats
 
 
-def chi_squared_function(set_1, set_2):
-    chi_square = stats.chisquare(set_1, set_2, sum_check=False, ddof=14)
-    print(f"finding {chi_square.statistic} / {chi_square.pvalue}")
-    return chi_square.statistic / chi_square.pvalue
+def reduced_chi_square(set_1, set_2):
+    chi_square = stats.chisquare(set_1, set_2, sum_check=False)
+    return chi_square.statistic
 
 
 random.seed()
@@ -31,12 +30,12 @@ wavelengths = [0.1, 0.11, 0.121, 0.133, 0.147, 0.161, 0.178, 0.195, 0.215, 0.237
                806, 887,
                976, 1070, 1180, 1300]
 
-data = pd.read_csv('datasets/normalised.csv')
+data = pd.read_csv('datasets/test.csv')
 
 
 def graph_test():
-    for i in range(3):
-        ROW = random.randint(1, 35360)
+    for i in range(10):
+        ROW = random.randint(1, 1_000)
 
         x, y = data.iloc[:, :14], data.iloc[:, 14:]
         x_row, y_row = x.iloc[ROW], y.iloc[ROW]
@@ -44,7 +43,7 @@ def graph_test():
         y_row = np.array([y_row])
         results = reconstructed_model.predict(np.array([x_row]), verbose=0)
 
-        chi = chi_squared_function(results[0], y_row[0])
+        chi = reduced_chi_square(results[0], y_row[0])
         print(f"Chi-squared: {chi}")
 
         rx = np.arange(-2, 1300, 1)

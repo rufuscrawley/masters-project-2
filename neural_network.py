@@ -49,3 +49,7 @@ print("Building model...")
 model.fit(x_train, y_train, epochs=10, validation_data=(x_val, y_val))
 
 model.save('models/final_model.keras')
+
+print("Stitching test dataset...")
+test_set = x_test.join(y_test)
+test_set.to_csv('datasets/test.csv', index=False)
