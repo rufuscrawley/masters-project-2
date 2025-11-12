@@ -14,7 +14,5 @@ results = reconstructed_model.predict(
     np.expand_dims(data, 1)
 )
 
-result_array = []
 
-
-print(result_array)
+print(results)

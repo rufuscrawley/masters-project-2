@@ -2,58 +2,16 @@ import os
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import keras
-import keras_tuner
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-
-def normalise(self, column, log=False, invert=False):
-    if log:
-        self[column] = self[column].map(lambda value: 0 if value <= 0 else np.log10(value))
-    max_val = self[column].abs().max()
-    self[column] = self[column].map(lambda value: value / max_val)
-    if invert:
-        self[column] = self[column].map(lambda value: value * -1)
-
-
-pd.DataFrame.normalise = normalise
-
 # Read in our csv file
 print("Reading .csv file...")
-data = pd.read_csv('datasets/outputs.csv')
-data = data.drop('ninc', axis=1)
-data.sample(frac=1)
-
-# Drop any inf values
-data.replace([np.inf, -np.inf], np.nan, inplace=True)
-data.dropna(inplace=True)
-
+data = pd.read_csv('datasets/normalised.csv')
 # Split it into I/O form
 x, y = data.iloc[:, :14], data.iloc[:, 14:]
-print("Normalising dataset...")
-x.normalise("amin1", True, True)
-x.normalise("amax1", True)
-x.normalise("inclinations")
-x.normalise("Stellar_age", True)
-x.normalise("mass1")
-x.normalise("Temp_sublimation")
-x.normalise("router")
-x.normalise("height")
-x.normalise("betadisc")
-x.normalise("alphadisc")
-x.normalise("mdisc")
-x.normalise("Stellar_radius")
-x.normalise("Stellar_temperature")
-x.normalise("rinner")
-print("Normalising Y values...")
-for row in y:
-    y.normalise(row, True, True)
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
-
-print("Stitching DataFrames...")
-df = x_train.join(y_train)
-df.to_csv('datasets/normalised.csv', index=False)
 
 # Create the validation set
 print("Creating validation set...")
@@ -86,7 +44,7 @@ for i in range(4):
         )
     )
 model.add(keras.layers.Dense(100, activation="softmax"))
-learning_rate = 0.00189
+learning_rate = 0.0001
 model.compile(
     optimizer=keras.optimizers.AdamW(learning_rate=learning_rate),
     loss="mse",
