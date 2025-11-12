@@ -11,7 +11,7 @@ print("Reading .csv file...")
 data = pd.read_csv('datasets/normalised.csv')
 # Split it into I/O form
 x, y = data.iloc[:, :14], data.iloc[:, 14:]
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, shuffle=False)
 
 # Create the validation set
 print("Creating validation set...")
@@ -35,10 +35,10 @@ model = keras.Sequential()
 model.add(normalize)
 model.add(keras.layers.Flatten())
 # Tune the number of layers.
-for i in range(4):
-    model.add(keras.layers.Dense(units=100, activation="relu"))
+model.add(keras.layers.Dense(units=150, activation="relu"))
+model.add(keras.layers.Dense(units=275, activation="relu"))
 model.add(keras.layers.Dense(100, activation="relu"))
-learning_rate = 0.0001
+learning_rate = 0.0017202
 model.compile(
     optimizer=keras.optimizers.AdamW(learning_rate=learning_rate),
     loss="mse",
@@ -48,4 +48,4 @@ model.compile(
 print("Building model...")
 model.fit(x_train, y_train, epochs=10, validation_data=(x_val, y_val))
 
-model.save('models/final_model.keras')  # The file needs to end with the .keras extension
+model.save('models/final_model.keras')
