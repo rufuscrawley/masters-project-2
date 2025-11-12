@@ -38,11 +38,11 @@ def build_model(hp):
     model.add(normalize)
     model.add(keras.layers.Flatten())
     # Tune the number of layers.
-    for i in range(4):
+    for i in range(hp.Int("layers", min_value=1, max_value=5)):
         model.add(
             keras.layers.Dense(
                 # Tune number of units separately.
-                units=hp.Int(f"units_{i}", min_value=100, max_value=400, step=25),
+                units=hp.Int(f"units_{i}", min_value=50, max_value=400, step=25),
                 activation="relu",
             )
         )
