@@ -23,6 +23,7 @@ pd.DataFrame.normalise = normalise
 print("Reading .csv file...")
 data = pd.read_csv('datasets/outputs.csv')
 data = data.drop('ninc', axis=1)
+data.sample(frac=1)
 
 # Drop any inf values
 data.replace([np.inf, -np.inf], np.nan, inplace=True)
@@ -30,31 +31,25 @@ data.dropna(inplace=True)
 
 # Split it into I/O form
 x, y = data.iloc[:, :14], data.iloc[:, 14:]
-print("x:")
-print(x)
-print("y:")
-print(y)
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
-
-# Normalise the training set
 print("Normalising dataset...")
-x_train.normalise("amin1", True, True)
-x_train.normalise("amax1", True)
-x_train.normalise("inclinations")
-x_train.normalise("Stellar_age", True)
-x_train.normalise("mass1")
-x_train.normalise("Temp_sublimation")
-x_train.normalise("router")
-x_train.normalise("height")
-x_train.normalise("betadisc")
-x_train.normalise("alphadisc")
-x_train.normalise("mdisc")
-x_train.normalise("Stellar_radius")
-x_train.normalise("Stellar_temperature")
-x_train.normalise("rinner")
+x.normalise("amin1", True, True)
+x.normalise("amax1", True)
+x.normalise("inclinations")
+x.normalise("Stellar_age", True)
+x.normalise("mass1")
+x.normalise("Temp_sublimation")
+x.normalise("router")
+x.normalise("height")
+x.normalise("betadisc")
+x.normalise("alphadisc")
+x.normalise("mdisc")
+x.normalise("Stellar_radius")
+x.normalise("Stellar_temperature")
+x.normalise("rinner")
 print("Normalising Y values...")
-for row in y_train:
-    y_train.normalise(row, True, True)
+for row in y:
+    y.normalise(row, True, True)
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
 
 print("Stitching DataFrames...")
 df = x_train.join(y_train)
@@ -64,50 +59,41 @@ df.to_csv('datasets/normalised.csv', index=False)
 print("Creating validation set...")
 training_length = len(x_train)
 training_ratio = 0.2
-print(
-    f"Splitting {training_length} datapoints - validation set gets {np.floor(training_length * training_ratio)},"
-    f" training gets {np.floor(training_length * (1 - training_ratio))}")
+print(f"Splitting {training_length} datapoints - "
+      f"validation set gets {np.floor(training_length * training_ratio)},"
+      f" training gets {np.floor(training_length * (1 - training_ratio))}")
 split_point = int(np.floor(training_length * training_ratio))
 x_val, y_val = x_train[-split_point:], y_train[-split_point:]
 x_train, y_train = x_train[:-split_point], y_train[:-split_point]
+
+print("Setting up the model...")
 
 # Normalisation test 2?
 print("Creating normalisation layer...")
 normalize = keras.layers.Normalization()
 normalize.adapt(x_train.to_numpy())
 
-print("Setting up the model...")
-
-
-def build_model(hp):
-    model = keras.Sequential()
-    model.add(normalize)
-    model.add(keras.layers.Flatten())
-    # Tune the number of layers.
-    for i in range(4):
-        model.add(
-            keras.layers.Dense(
-                # Tune number of units separately.
-                units=hp.Int(f"units_{i}", min_value=100, max_value=400, step=25),
-                activation="relu",
-            )
+model = keras.Sequential()
+model.add(normalize)
+model.add(keras.layers.Flatten())
+# Tune the number of layers.
+for i in range(4):
+    model.add(
+        keras.layers.Dense(
+            # Tune number of units separately.
+            units=100,
+            activation="relu",
         )
-    model.add(keras.layers.Dense(100, activation="softmax"))
-    learning_rate = hp.Float("lr", min_value=1e-4, max_value=1e-2, sampling="log")
-    model.compile(
-        optimizer=keras.optimizers.Adam(learning_rate=learning_rate),
-        loss="mean_absolute_error",
-        metrics=["mse"],
     )
-    return model
-
-
-print("Building model...")
-tuner = keras_tuner.RandomSearch(
-    hypermodel=build_model,
-    objective="val_loss",
-    max_trials=1000,
-    executions_per_trial=2,
+model.add(keras.layers.Dense(100, activation="softmax"))
+learning_rate = 0.00189
+model.compile(
+    optimizer=keras.optimizers.AdamW(learning_rate=learning_rate),
+    loss="mse",
+    metrics=["accuracy", "mae"],
 )
 
-tuner.search(x_train, y_train, epochs=10, validation_data=(x_val, y_val))
+print("Building model...")
+model.fit(x_train, y_train, epochs=10, validation_data=(x_val, y_val))
+
+model.save('models/final_model.keras')  # The file needs to end with the .keras extension
