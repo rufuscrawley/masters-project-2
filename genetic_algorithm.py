@@ -9,6 +9,8 @@ import numpy as np
 import chi_squared
 import pandas as pd
 
+from variables import names
+
 random.seed()
 ROW = random.randint(1, 50_000)
 

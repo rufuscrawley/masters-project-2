@@ -3,6 +3,7 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import numpy as np
 import pandas as pd
+from variables import names
 
 
 def normalise(self, column, normalisation, invert=False):
@@ -36,23 +37,11 @@ data.dropinf()
 # Split it into I/O form
 x, y = data.iloc[:, :14], data.iloc[:, 14:]
 print("Normalising dataset...")
-x.normalise("amin1", normalisation="log", invert=True)
-x.normalise("amax1", normalisation="log")
-x.normalise("inclinations", normalisation="lin")
-x.normalise("Stellar_age", normalisation="log")
-x.normalise("mass1", normalisation="lin")
-x.normalise("Temp_sublimation", normalisation="log")
-x.normalise("router", normalisation="lin")
-x.normalise("height", normalisation="lin")
-x.normalise("betadisc", normalisation="lin")
-x.normalise("alphadisc", normalisation="lin")
-x.normalise("mdisc", normalisation="log", invert=True)
-x.normalise("Stellar_radius", normalisation="lin")
-x.normalise("Stellar_temperature", normalisation="lin")
-x.normalise("rinner", normalisation="lin")
+for key in names:
+    x.normalise(key, names[key][0], names[key][1])
 print("Normalising Y values...")
 for row in y:
-    y.normalise(row, normalisation="log", invert=True)
+    y.normalise(row, log_norm=True, invert=True)
 
 print("Stitching DataFrames...")
 df = x.join(y)
