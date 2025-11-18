@@ -33,8 +33,8 @@ wavelengths = [0.1, 0.11, 0.121, 0.133, 0.147, 0.161, 0.178, 0.195, 0.215, 0.237
 data = pd.read_csv('datasets/test.csv')
 
 
-def graph_test():
-    for i in range(10):
+def graph_test(tests):
+    for i in range(tests):
         ROW = random.randint(1, 1_000)
 
         x, y = data.iloc[:, :14], data.iloc[:, 14:]
@@ -44,7 +44,7 @@ def graph_test():
         results = reconstructed_model.predict(np.array([x_row]), verbose=0)
 
         chi = reduced_chi_square(results[0], y_row[0])
-        print(f"Chi-squared: {chi}")
+        # print(f"Chi-squared: {chi}")
 
         rx = np.arange(-2, 1300, 1)
 
@@ -60,5 +60,4 @@ def graph_test():
     plt.legend()
     plt.show()
 
-
-graph_test()
+graph_test(5)
