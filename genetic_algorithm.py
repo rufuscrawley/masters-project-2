@@ -20,15 +20,17 @@ reconstructed_model = keras.models.load_model("models/final_model.keras")
 x, y = data.iloc[:, :14], data.iloc[:, 14:]
 x_row, y_row = x.iloc[ROW], y.iloc[ROW]
 
+print(f"Test row: \n{np.array(x_row)}")
+
 
 def chi_optimisor(ga_instance, free_parameters, solution_idx):
     results = reconstructed_model.predict(np.array([free_parameters]), verbose=0)
     return_value = chi_squared.reduced_chi_square(results[0], np.array(y.iloc[ROW]))
-    print(return_value)
+    print(f"chi-squared: {return_value}")
     return -return_value
 
 
-ga_instance = pygad.GA(num_generations=1000,
+ga_instance = pygad.GA(num_generations=100,
                        num_parents_mating=4,
                        fitness_func=chi_optimisor,
                        sol_per_pop=8,
@@ -46,3 +48,16 @@ ga_instance.run()
 solution, solution_fitness, solution_idx = ga_instance.best_solution()
 print("Parameters of the best solution : {solution}".format(solution=solution))
 print("Fitness value of the best solution = {solution_fitness}".format(solution_fitness=solution_fitness))
+
+normalisation_constants = np.array(pd.read_csv('datasets/normalisation_constants.csv').transpose())[0]
+for i, key in enumerate(names.keys()):
+    if names[key][1]:
+        if names[key][0]:
+            print(f"{key}: {np.pow(10, solution[i] * -1 * normalisation_constants[i])}")
+        else:
+            print(f"{key}: {solution[i] * -1 * normalisation_constants[i]}")
+    else:
+        if names[key][0]:
+            print(f"{key}: {np.pow(10, solution[i] * normalisation_constants[i])}")
+        else:
+            print(f"{key}: {solution[i] * normalisation_constants[i]}")

@@ -5,14 +5,15 @@ import numpy as np
 import pandas as pd
 from variables import names
 
+norm_con_list = []
 
-def normalise(self, column, normalisation, invert=False):
-    if normalisation == "log":
+
+def normalise(self, column, log_norm=False, invert=False):
+    if log_norm:
         self.loc[:, column] = self[column].map(lambda value: 0 if value <= 0 else np.log10(value))
-    elif normalisation == "lin":
-        pass
     max_val = self[column].abs().max()
     self.loc[:, column] = self[column].map(lambda value: value / max_val)
+    norm_con_list.append(max_val)
     if invert:
         self.loc[:, column] = self[column].map(lambda value: value * -1)
 
@@ -46,3 +47,5 @@ for row in y:
 print("Stitching DataFrames...")
 df = x.join(y)
 df.to_csv('datasets/normalised.csv', index=False)
+norm_con_dataframe = pd.DataFrame(norm_con_list)
+norm_con_dataframe.to_csv('datasets/normalisation_constants.csv', index=False)
