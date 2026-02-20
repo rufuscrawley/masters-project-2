@@ -3,41 +3,23 @@ import os
 from sklearn.model_selection import train_test_split
 
 import optimisation
+from utilities import create_directory
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 from variables import names
 import numpy as np
 import pandas as pd
-import os
 
-
-def create_directory(folder_name):
-    """
-    Tries to write a folder. If the folder already exists, suppresses the error, and continues.
-    :type folder_name: str
-    :param folder_name: The folder name.
-    """
-    try:
-        os.makedirs(folder_name)
-    except OSError:
-        pass
-
-
-norm_con_list = []
+n_consts = []
 
 
 def normalise(self, column, log_norm=False, invert=False):
+    inversion = -1 if invert else 1
     if log_norm:
         self.loc[:, column] = self[column].map(lambda val: 0 if val <= 0 else np.log10(val))
     max_val = self[column].abs().max()
-    self.loc[:, column] = self[column].map(lambda val: val / max_val)
-    try:
-        value = float(column)
-        norm_con_list.append(max_val * value)
-    except ValueError:
-        norm_con_list.append(max_val)
-    if invert:
-        self.loc[:, column] = self[column].map(lambda val: val * -1)
+    self.loc[:, column] = self[column].map(lambda val: (val * inversion) / max_val)
+    n_consts.append(max_val)
 
 
 def dropinf(self):
@@ -58,12 +40,13 @@ pd.DataFrame.iloc_xy = iloc_xy
 def main(file_path: str, data_split: int, training_ratio: float,
          do_keras: bool = False, drop_values: list[str] = None):
     # Setup file structure
-    create_directory("datasets/constants")
-    create_directory("datasets/normalised")
+    create_directory("../datasets/constants")
+    create_directory("../datasets/normalised")
+    create_directory("../models")
     # Define file-path strings
-    file = f"datasets/{file_path}.csv"
-    n_file = f'datasets/normalised/n_{file_path}.csv'
-    const_file = f'datasets/constants/const_{file_path}.csv'
+    file = f"../datasets/{file_path}.csv"
+    n_file = f'../datasets/normalised/n_{file_path}.csv'
+    const_file = f'../datasets/constants/const_{file_path}.csv'
 
     # Read in our csv file
     print("Reading in .csv...")
@@ -83,7 +66,6 @@ def main(file_path: str, data_split: int, training_ratio: float,
     except FileNotFoundError:
         # Split it into I/O form
         x, y = csv.iloc_xy(data_split)
-
         # Normalise each input column
         print("Normalising input columns...")
         for key in names:
@@ -93,14 +75,13 @@ def main(file_path: str, data_split: int, training_ratio: float,
         # Normalise y-values
         print("Normalising output columns...")
         for col in y:
+            y[col] = y[col].map(lambda val: val / float(col))
             y.normalise(col, log_norm=True, invert=True)
-
         print("Reconnecting csvs...")
         n_df = x.join(y)
         n_df.to_csv(n_file, index=False)
-
         print("Listing normalisation constants...")
-        const_df = pd.DataFrame(norm_con_list)
+        const_df = pd.DataFrame(n_consts)
         const_df.to_csv(const_file, index=False)
         print("Finishing up...")
         n_csv = pd.read_csv(n_file)
@@ -124,4 +105,4 @@ def main(file_path: str, data_split: int, training_ratio: float,
 
     print("Creating test set!")
     test_set = x_test.join(y_test)
-    test_set.to_csv(f'datasets/{file_path}_test.csv', index=False)
+    test_set.to_csv(f'../datasets/{file_path}_test.csv', index=False)

@@ -1,13 +1,11 @@
 import os
-from typing import Any
 
-import scipy
 from matplotlib import pyplot as plt
 
+import utilities
 import variables
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-import random
 import keras
 import pygad
 import numpy as np
@@ -16,89 +14,81 @@ import scipy.stats as stats
 from variables import names
 
 
-def graph_expected(file_name, inputs):
-    print("loading model")
+def find_solution(inputs, outputs, file_name):
     model = keras.models.load_model(f"models/{file_name}_model.keras")
-
-    calculated_flux = model.predict(np.array(inputs), verbose=0)
-    plt.plot(variables.wavelengths, calculated_flux[0], label="pred")
-    plt.plot([0.545, 0.638, 0.797,
-              1.22, 1.63, 2.2,
-              3.6, 4.5, 5.8,
-              8.0, 24, 61.1,
-              70, 74.8, 89.3,
-              1300],
-             [0.0655, 0.120, 0.216,
-              0.483, 0.591, 0.511,
-              0.324, 0.220, 0.313,
-              0.370, 0.765, 1.42,
-              1.581, 1.480, 1.260,
-              0.1758], label="im lupi"
-             )
-    plt.legend()
-    plt.show()
-
-
-def run_genetic_algorithm(inputs, outputs, file_name):
-    print("loading model")
-    model = keras.models.load_model(f"models/{file_name}_model.keras")
-    print("inputs:")
-    print(inputs)
 
     def chi_optimisor(_ga_instance, free_parameters, _solution_idx):
         results = model.predict(np.array([free_parameters]), verbose=0)
-        return_value = -1 * stats.chisquare(results[0], np.array(outputs), sum_check=False, ddof=len(inputs)).statistic
+        return_value = -1 * stats.chisquare(results[0], np.array(outputs),
+                                            sum_check=False, ddof=len(inputs)).statistic
+        gens = ga_instance.generations_completed
+        print(f"gen: {gens} || chi: {return_value}")
         return return_value
 
     print("setting up ga nistance")
     ga_instance = pygad.GA(num_generations=100,
-                           num_parents_mating=4,
+                           num_parents_mating=8,
                            fitness_func=chi_optimisor,
-                           sol_per_pop=8,
-                           gene_space=np.arange(0.0, 1.0, 1E-5),
+                           sol_per_pop=16,
+                           gene_space={"low": 0, "high": 1},
                            num_genes=len(inputs),
                            init_range_low=0.0,
                            init_range_high=1.0,
-                           parent_selection_type="sss",
-                           keep_parents=1,
+                           parent_selection_type="tournament",
+                           K_tournament=4,
+                           keep_parents=2,
                            crossover_type="single_point",
                            mutation_type="random",
-                           mutation_percent_genes=33)
+                           mutation_percent_genes=10)
     ga_instance.run()
-
     solution, solution_fitness, solution_idx = ga_instance.best_solution()
     print(f"Parameters of the best solution : {solution}")
     print(f"Expected Solution: {np.array(inputs)}")
     print(f"Fitness value of the best solution = {solution_fitness}")
 
-    calculated_flux = model.predict(np.array([solution]), verbose=0)
-    plt.plot(variables.wavelengths, calculated_flux[0], label="pred")
-    plt.plot(variables.wavelengths, outputs, label="exp")
-    plt.grid(True)
+    return solution
+
+
+def retrieve_inputs(solution, file_name, ignored_variables):
+    file = f'datasets/constants/const_{file_name}.csv'
+    n_consts = np.array(pd.read_csv(file).transpose())[0]
+    i = 0
+
+    for key in names.keys():
+        if key in ignored_variables: continue
+        mult = -1 if names[key][1] else 1
+        n_solution = solution[i] * mult * n_consts[i]
+        if names[key][0]:
+            result = np.pow(10, n_solution)
+            print(f"{key} = 10 ^ {solution[i]} * {mult} * {n_consts[i]} = {result}")
+        else:
+            result = n_solution
+            print(f"{key} = {solution[i]} * {mult} * {n_consts[i]} = {result}")
+        i += 1
+
+
+def graph_outputs(solution, file_name, outputs_csv):
+    model = keras.models.load_model(f"models/{file_name}_model.keras")
+    outputs = model.predict(np.array([solution]), verbose=0)[0]
+    file = f'datasets/constants/const_{file_name}.csv'
+    n_consts = np.array(pd.read_csv(file).transpose())[0].tolist()
+    n_consts = n_consts[len(solution):]
+    for n, const in enumerate(n_consts):
+        og_output = outputs[n]
+        if og_output == 0.0:
+            outputs[n] = outputs[n - 1]
+            continue
+        outputs[n] = (og_output * -1 * const)
+
+    plt.plot(np.log10(variables.wavelengths), outputs, label="plotted")
+    plt.plot(np.log10(variables.wavelengths), np.log10(outputs_csv))
+
     plt.legend()
     plt.show()
 
-    # normalisation_constants = np.array(pd.read_csv(f'datasets/constants/{file_name}.csv').transpose())[0]
-    # for i, key in enumerate(names.keys()):
-    #     mult = -1 if names[key][1] else 1
-    #     normalised_solution = solution[i] * mult * normalisation_constants[i]
-    #     if names[key][0]:
-    #         result = np.pow(10, normalised_solution)
-    #         print(f"{key} = 10 ^ {solution[i]} * {mult} * {normalisation_constants[i]} = {result}")
-    #     else:
-    #         result = normalised_solution
-    #         print(f"{key} = {solution[i]} * {mult} * {normalisation_constants[i]} = {result}")
-
-
-def get_dataset_from_csv(dataset_file, data_split) -> tuple[Any, Any]:
-    random.seed()
-    dataset = pd.read_csv(f"datasets/normalised/{dataset_file}_norm.csv")
-    i, o = dataset.iloc[:, :data_split], dataset.iloc[:, data_split:]
-    ROW = random.randint(1, 50_000)
-    # ROW = 2
-    return np.array(i.iloc[ROW]), np.array(o.iloc[ROW])
-
 
 def run():
-    inputs, outputs = get_dataset_from_csv("outputs", 14)
-    run_genetic_algorithm(inputs, outputs, "outputs")
+    inputs, outputs, n_inputs, n_outputs = utilities.get_dataset_from_csv("outputs", 13)
+    sol = find_solution(n_inputs, n_outputs, "outputs")
+    graph_outputs(sol, "outputs", outputs)
+    # retrieve_inputs(sol, "outputs", ["alphadisc"])
