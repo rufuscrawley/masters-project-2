@@ -2,6 +2,7 @@ import os
 
 from matplotlib import pyplot as plt
 
+from conversion import JanskyWavelengths
 import utilities
 import variables
 
@@ -27,16 +28,26 @@ def get_gene_space():
 
 
 def find_solution(outputs, inputs=None):
+    """
+
+    :param outputs: Normalised outputs to be used for chi-squared comparison between 1-0
+    :param inputs:
+    :return: Best solution as an array of inputs for the network.
+    """
+
+    if inputs is None:
+        inputs = []
+
     def chi_optimisor(_ga_instance, free_parameters, _solution_idx):
         results = variables.model.predict(np.array([free_parameters]), verbose=0)
         return_value = -1 * stats.chisquare(results[0], np.array(outputs),
-                                            sum_check=False, ddof=variables.split).statistic
+                                            sum_check=False).statistic
         gens = ga_instance.generations_completed
         print(f"gen: {gens} || chi: {return_value * -1}")
         return return_value
 
     print("setting up ga nistance")
-    ga_instance = pygad.GA(num_generations=1,
+    ga_instance = pygad.GA(num_generations=10,
                            num_parents_mating=8,
                            fitness_func=chi_optimisor,
                            sol_per_pop=16,
@@ -48,15 +59,48 @@ def find_solution(outputs, inputs=None):
                            keep_parents=4,
                            crossover_type="single_point",
                            mutation_type="random",
-                           mutation_percent_genes=10)
+                           mutation_percent_genes=15)
     ga_instance.run()
     solution, solution_fitness, solution_idx = ga_instance.best_solution()
     print(f"PARAMS : {solution}")
-    if inputs.any():
+    if (len(inputs)) > 0:
         print(f"EXPECTED : {np.array(inputs)}")
     print(f"FITNESS : {solution_fitness}")
-
     return solution
+
+
+def denormalise_outputs(outputs):
+    n_consts = utilities.get_y_consts(variables.split)
+    new_outputs = []
+    for n, output in enumerate(outputs):
+        print(f"10 ^ (-{output} * {n_consts[n]})")
+        new_outputs.append(np.pow(10, output * -1 * n_consts[n]))
+    return new_outputs
+
+
+def graph_outputs(solution, expected_outputs):
+    outputs_pred = variables.model.predict(np.array([solution]), verbose=0)[0]
+    n_consts = utilities.get_y_consts(variables.split)
+    for n, const in enumerate(n_consts):
+        og_output = outputs_pred[n]
+        if og_output == 0.0:
+            outputs_pred[n] = outputs_pred[n - 1]
+            continue
+        outputs_pred[n] = np.pow(10, og_output * -1 * const) * 10 * variables.wavelengths[n]
+
+    plt.plot(variables.wavelengths, outputs_pred, label="generated")
+    if type(expected_outputs) == JanskyWavelengths:
+        plt.scatter(expected_outputs.wavelengths, expected_outputs.convert_to_si(), label="expected")
+    else:
+        plt.plot(variables.wavelengths, expected_outputs, label="expected")
+
+    plt.title("Observed SED")
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.xlabel("Wavelength (Microns)")
+    plt.ylabel("Flux (erg / s / cm^2)")
+    plt.legend()
+    plt.show()
 
 
 def retrieve_inputs(solution):
@@ -75,31 +119,9 @@ def retrieve_inputs(solution):
         i += 1
 
 
-def graph_outputs(solution, expected_outputs):
-    outputs = variables.model.predict(np.array([solution]), verbose=0)[0]
-    n_consts = utilities.get_y_consts(variables.split)
-
-    for n, const in enumerate(n_consts):
-        og_output = outputs[n]
-        if og_output == 0.0:
-            outputs[n] = outputs[n - 1]
-            continue
-        outputs[n] = np.pow(10, og_output * -1 * const)
-
-    plt.plot(variables.wavelengths, outputs, label="plotted")
-    plt.plot(variables.wavelengths, expected_outputs, label="expected")
-
-    plt.title("Observed SED")
-    plt.xscale("log")
-    plt.yscale("log")
-    plt.xlabel("Wavelength (Microns)")
-    plt.ylabel("Flux (erg / s / cm^2)")
-    plt.legend()
-    plt.show()
-
-
 def run():
     inputs, outputs, n_inputs, n_outputs = utilities.get_dataset_from_csv()
+    print(f"We're going to find the solution from: {n_outputs}")
     sol = find_solution(n_outputs, n_inputs)
     graph_outputs(sol, outputs)
     # retrieve_inputs(sol, "outputs", ["alphadisc"])

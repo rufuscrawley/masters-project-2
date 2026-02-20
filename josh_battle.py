@@ -17,7 +17,7 @@ josh_wavelengths = [0.545, 0.638, 0.797,
                     8, 24, 61.1,
                     70, 74.8, 89.3,
                     1.3e+03]
-jys = conversion.JanksyWavelengths(josh_janskys, josh_wavelengths)
+jys = conversion.JanskyWavelengths(josh_janskys, josh_wavelengths)
 
 
 

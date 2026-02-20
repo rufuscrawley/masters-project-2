@@ -1,4 +1,4 @@
-class JanksyWavelengths:
+class JanskyWavelengths:
     def __init__(self, janskys, wavelengths):
         """
         :param janskys: Janskys in Jy

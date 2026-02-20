@@ -34,6 +34,11 @@ filename = "outputs"
 file = f"datasets/{filename}.csv"
 n_file = f'datasets/normalised/n_{filename}.csv'
 const_file = f'datasets/constants/const_{filename}.csv'
-excluded = ["rinner", "alphadisc"]
+excluded = ["ninc",
+            "Stellar_age",
+            "mass1",
+            "Temp_sublimation",
+            "alphadisc",
+            "rinner"]
 split = 15 - len(excluded)
 model = keras.models.load_model(f"models/{filename}_model.keras")

@@ -67,7 +67,9 @@ def main(training_ratio: float, do_keras: bool = False):
         print("Normalising input columns...")
         for key in names:
             if key in variables.excluded:
+                print(f"- Skipping {key}")
                 continue
+            print(f"Normalising {key}")
             x.normalise(key, names[key][0], names[key][1])
             pass
         # Normalise y-values
@@ -90,7 +92,7 @@ def main(training_ratio: float, do_keras: bool = False):
     x_train, x_test, y_train, y_test = train_test_split(x_n, y_n, test_size=training_ratio, shuffle=False)
     training_length = len(x_train)
     split_point = int(np.floor(training_length * training_ratio))
-    print(f"Splitting at {split_point}...")
+    print(f"Splitting at {split_point}/{x_train}...")
     x_val, y_val = x_train[-split_point:], y_train[-split_point:]
     x_train, y_train = x_train[:-split_point], y_train[:-split_point]
 
