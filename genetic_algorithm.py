@@ -6,7 +6,6 @@ import utilities
 import variables
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-import keras
 import pygad
 import numpy as np
 import pandas as pd
@@ -14,14 +13,12 @@ import scipy.stats as stats
 from variables import names
 
 
-def get_gene_space(file_path, n_parameters):
+def get_gene_space():
     normie_x = 0
-    n_file = f'datasets/normalised/n_{file_path}.csv'
-    n_csv = pd.read_csv(n_file)
+    n_csv = pd.read_csv(variables.n_file)
     space_list = []
     for column in n_csv:
-        if normie_x == n_parameters:
-            print(f"{normie_x} = {n_parameters}")
+        if normie_x == variables.split:
             break
         space_list.append({"low": n_csv[column].min(),
                            "high": n_csv[column].max()})
@@ -29,13 +26,11 @@ def get_gene_space(file_path, n_parameters):
     return space_list
 
 
-def find_solution(outputs, file_name, input_length, inputs=None):
-    model = keras.models.load_model(f"models/{file_name}_model.keras")
-
+def find_solution(outputs, inputs=None):
     def chi_optimisor(_ga_instance, free_parameters, _solution_idx):
-        results = model.predict(np.array([free_parameters]), verbose=0)
+        results = variables.model.predict(np.array([free_parameters]), verbose=0)
         return_value = -1 * stats.chisquare(results[0], np.array(outputs),
-                                            sum_check=False, ddof=input_length).statistic
+                                            sum_check=False, ddof=variables.split).statistic
         gens = ga_instance.generations_completed
         print(f"gen: {gens} || chi: {return_value * -1}")
         return return_value
@@ -45,8 +40,8 @@ def find_solution(outputs, file_name, input_length, inputs=None):
                            num_parents_mating=8,
                            fitness_func=chi_optimisor,
                            sol_per_pop=16,
-                           gene_space=get_gene_space("outputs", 13),
-                           num_genes=input_length,
+                           gene_space=get_gene_space(),
+                           num_genes=variables.split,
                            init_range_low=0.0,
                            init_range_high=1.0,
                            parent_selection_type="sss",
@@ -64,13 +59,11 @@ def find_solution(outputs, file_name, input_length, inputs=None):
     return solution
 
 
-def retrieve_inputs(solution, file_name, ignored_variables):
-    file = f'../datasets/constants/const_{file_name}.csv'
-    n_consts = np.array(pd.read_csv(file).transpose())[0]
+def retrieve_inputs(solution):
+    n_consts = np.array(pd.read_csv(variables.const_file).transpose())[0]
     i = 0
-
     for key in names.keys():
-        if key in ignored_variables: continue
+        if key in variables.excluded: continue
         mult = -1 if names[key][1] else 1
         n_solution = solution[i] * mult * n_consts[i]
         if names[key][0]:
@@ -82,10 +75,9 @@ def retrieve_inputs(solution, file_name, ignored_variables):
         i += 1
 
 
-def graph_outputs(solution, file_name, outputs_csv):
-    model = keras.models.load_model(f"models/{file_name}_model.keras")
-    outputs = model.predict(np.array([solution]), verbose=0)[0]
-    n_consts = utilities.get_y_consts(file_name, len(solution))
+def graph_outputs(solution, expected_outputs):
+    outputs = variables.model.predict(np.array([solution]), verbose=0)[0]
+    n_consts = utilities.get_y_consts(variables.split)
 
     for n, const in enumerate(n_consts):
         og_output = outputs[n]
@@ -95,7 +87,7 @@ def graph_outputs(solution, file_name, outputs_csv):
         outputs[n] = np.pow(10, og_output * -1 * const)
 
     plt.plot(variables.wavelengths, outputs, label="plotted")
-    plt.plot(variables.wavelengths, outputs_csv, label="expected")
+    plt.plot(variables.wavelengths, expected_outputs, label="expected")
 
     plt.title("Observed SED")
     plt.xscale("log")
@@ -107,7 +99,7 @@ def graph_outputs(solution, file_name, outputs_csv):
 
 
 def run():
-    inputs, outputs, n_inputs, n_outputs = utilities.get_dataset_from_csv("outputs", 13)
-    sol = find_solution(n_outputs, "outputs", len(n_inputs), n_inputs)
-    graph_outputs(sol, "outputs", outputs)
+    inputs, outputs, n_inputs, n_outputs = utilities.get_dataset_from_csv()
+    sol = find_solution(n_outputs, n_inputs)
+    graph_outputs(sol, outputs)
     # retrieve_inputs(sol, "outputs", ["alphadisc"])
