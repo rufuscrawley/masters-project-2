@@ -5,19 +5,20 @@ import keras
 import keras_tuner
 
 
-def run_keras(x_train, y_train, x_val, y_val):
+def run_keras(x_train, y_train, x_val, y_val) -> None:
+    print("Setting up the model...")
     # Normalisation test 2?
     print("Creating normalisation layer...")
     normalize = keras.layers.Normalization()
     normalize.adapt(x_train.to_numpy())
-
-    print("Setting up the model...")
 
     def build_model(hp):
         model = keras.Sequential()
         model.add(normalize)
         model.add(keras.layers.Flatten())
         # Tune the number of layers.
+        model.add(keras.layers.Dense(100, activation="relu"))
+
         for i in range(hp.Int("layers", min_value=1, max_value=5)):
             model.add(
                 keras.layers.Dense(
@@ -40,13 +41,14 @@ def run_keras(x_train, y_train, x_val, y_val):
         hypermodel=build_model,
         objective="val_loss",
         max_trials=1000,
-        executions_per_trial=2,
+        executions_per_trial=1,
     )
 
     tuner.search(x_train, y_train, epochs=10, validation_data=(x_val, y_val))
 
 
-def run_model(x_train, y_train, x_val, y_val, file_path):
+def run_model(x_train, y_train, x_val, y_val, file_path) -> None:
+
     print("Creating normalisation layer...")
     normalize = keras.layers.Normalization()
     normalize.adapt(x_train.to_numpy())
@@ -56,10 +58,13 @@ def run_model(x_train, y_train, x_val, y_val, file_path):
     model.add(keras.layers.Flatten())
     # Tune the number of layers.
     model.add(keras.layers.Dense(units=100, activation="relu"))
-    model.add(keras.layers.Dense(units=175, activation="relu"))
-    model.add(keras.layers.Dense(375, activation="relu"))
+    model.add(keras.layers.Dense(units=300, activation="relu"))
+    model.add(keras.layers.Dense(units=250, activation="relu"))
+    model.add(keras.layers.Dense(units=400, activation="relu"))
+    model.add(keras.layers.Dense(units=325, activation="relu"))
+    model.add(keras.layers.Dense(units=225, activation="relu"))
     model.add(keras.layers.Dense(units=100, activation="relu"))
-    learning_rate = 0.00063953
+    learning_rate = 0.0044792
     model.compile(
         optimizer=keras.optimizers.AdamW(learning_rate=learning_rate),
         loss="mse",

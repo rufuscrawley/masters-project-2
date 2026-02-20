@@ -72,10 +72,11 @@ def main(file_path: str, data_split: int, training_ratio: float,
             if key in drop_values:
                 continue
             x.normalise(key, names[key][0], names[key][1])
+            pass
         # Normalise y-values
         print("Normalising output columns...")
         for col in y:
-            y[col] = y[col].map(lambda val: val / float(col))
+            y.loc[:, col] = y[col].map(lambda val: val / (float(col) * 10))
             y.normalise(col, log_norm=True, invert=True)
         print("Reconnecting csvs...")
         n_df = x.join(y)

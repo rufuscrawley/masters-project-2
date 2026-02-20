@@ -28,3 +28,17 @@ def create_directory(folder_name):
         os.makedirs(folder_name)
     except OSError:
         pass
+
+
+def get_x_consts(file_name, inputs):
+    file = f'../datasets/constants/const_{file_name}.csv'
+    n_consts = np.array(pd.read_csv(file).transpose())[0].tolist()
+    n_consts = n_consts[:inputs]
+    return n_consts
+
+
+def get_y_consts(file_name, inputs):
+    file = f'datasets/constants/const_{file_name}.csv'
+    n_consts = np.array(pd.read_csv(file).transpose())[0].tolist()
+    n_consts = n_consts[inputs:]
+    return n_consts
