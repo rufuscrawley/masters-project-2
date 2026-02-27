@@ -3,20 +3,62 @@
 import keras
 
 names = {
-    "amin1": [True, True],
-    "amax1": [True, False],
-    "inclinations": [False, False],
-    "Stellar_age": [True, False],
-    "mass1": [False, False],
-    "Temp_sublimation": [True, False],
-    "router": [False, False],
-    "height": [False, False],
-    "betadisc": [False, False],
-    "alphadisc": [False, False],
-    "mdisc": [True, True],
-    "Stellar_radius": [False, False],
-    "Stellar_temperature": [False, False],
-    "rinner": [False, False],
+    "amin1": {
+        "logarithmic": True,
+        "invert": True
+    },
+    "amax1": {
+        "logarithmic": True,
+        "invert": False
+    },
+    "inclinations": {
+        "logarithmic": False,
+        "invert": False
+    },
+    "Stellar_age": {
+        "logarithmic": True,
+        "invert": False
+    },
+    "mass1": {
+        "logarithmic": False,
+        "invert": False
+    },
+    "Temp_sublimation": {
+        "logarithmic": True,
+        "invert": False
+    },
+    "router": {
+        "logarithmic": False,
+        "invert": False
+    },
+    "height": {
+        "logarithmic": False,
+        "invert": False
+    },
+    "betadisc": {
+        "logarithmic": False,
+        "invert": False
+    },
+    "alphadisc": {
+        "logarithmic": False,
+        "invert": False
+    },
+    "mdisc": {
+        "logarithmic": True,
+        "invert": True
+    },
+    "Stellar_radius": {
+        "logarithmic": False,
+        "invert": False
+    },
+    "Stellar_temperature": {
+        "logarithmic": False,
+        "invert": False
+    },
+    "rinner": {
+        "logarithmic": False,
+        "invert": False
+    },
 }
 wavelengths = [0.1, 0.11, 0.121, 0.133, 0.147, 0.161, 0.178, 0.195, 0.215, 0.237, 0.26, 0.286, 0.315, 0.347, 0.382,
                0.42, 0.462,
@@ -41,4 +83,4 @@ excluded = ["ninc",
             "alphadisc",
             "rinner"]
 split = 15 - len(excluded)
-model = keras.models.load_model(f"models/{filename}_model.keras")
+# model = keras.models.load_model(f"models/{filename}_model.keras")
