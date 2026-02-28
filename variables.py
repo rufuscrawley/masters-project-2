@@ -83,4 +83,4 @@ excluded = ["ninc",
             "alphadisc",
             "rinner"]
 split = 15 - len(excluded)
-# model = keras.models.load_model(f"models/{filename}_model.keras")
+model = keras.models.load_model(f"models/{filename}_model.keras")
