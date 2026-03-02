@@ -14,6 +14,8 @@ import variables as v
 
 x_consts = utilities.get_x_consts(variables.split)
 y_consts = utilities.get_y_consts(variables.split)
+x_consts_arr = np.array(x_consts)
+y_consts_arr = np.array(y_consts)
 
 
 ######################
@@ -26,6 +28,7 @@ def normalise_fluxes(fluxes):
     and normalises them to be fed to the neural network.
     :return:
     """
+
     new_inputs = []
     for n, value in enumerate(fluxes):
         if value <= 0 and n != 0:

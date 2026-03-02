@@ -1,5 +1,7 @@
 import os
 
+import keras
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from matplotlib import pyplot as plt
@@ -87,6 +89,11 @@ def find_solution(fluxes, wavelengths) -> list:
     def optimisor(_ga_instance, free_parameters, _solution_idx):
         # Suggest a set of free parameters, and then use NN to predict
         # a denormalised set of 100 fluxes.
+        #      3.6, 4.5, 5.8, 8.0, 24, 61.1,
+        #      70, 74.8, 89.3, 1300],
+        #     [0.06907, 0.1348, 0.276, 0.7187, 0.97, 0.7909,
+        #      0.5641, 0.4537, 0.4334, 0.5358, 1.445, 3.103,
+        #      3.344, 3.392, 3.048, 0.01512], True)
         sol_guessed = v.model.predict(np.array([free_parameters]), verbose=0)[0]
         s_1 = norm.denormalise_fluxes(sol_guessed)
         # Interpolate the solution over a predetermined number of fluxes.
@@ -119,10 +126,9 @@ def find_solution(fluxes, wavelengths) -> list:
     print(f"fitness: {sol_fitness}")
     return sol
 
-
-run([0.545, 0.638, 0.797, 1.22, 1.63, 2.2,
-     3.6, 4.5, 5.8, 8.0, 24, 61.1,
-     70, 74.8, 89.3, 1300],
-    [0.06907, 0.1348, 0.276, 0.7187, 0.97, 0.7909,
-     0.5641, 0.4537, 0.4334, 0.5358, 1.445, 3.103,
-     3.344, 3.392, 3.048, 0.01512], True)
+# run([0.545, 0.638, 0.797, 1.22, 1.63, 2.2,
+#      3.6, 4.5, 5.8, 8.0, 24, 61.1,
+#      70, 74.8, 89.3, 1300],
+#     [0.06907, 0.1348, 0.276, 0.7187, 0.97, 0.7909,
+#      0.5641, 0.4537, 0.4334, 0.5358, 1.445, 3.103,
+#      3.344, 3.392, 3.048, 0.01512], True)
