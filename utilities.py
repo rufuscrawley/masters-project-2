@@ -1,6 +1,8 @@
 import os
 
-import variables
+from scipy.interpolate import CubicSpline
+
+import variables as v
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import random
@@ -37,10 +39,10 @@ class SIWavelengths:
 
 def get_dataset_from_csv():
     random.seed()
-    file = pd.read_csv(variables.file)
-    n_file = pd.read_csv(variables.n_file)
+    file = pd.read_csv(v.file)
+    n_file = pd.read_csv(v.n_file)
     i, o = file.iloc[:, :15], file.iloc[:, 15:]
-    n_i, n_o = n_file.iloc[:, :variables.split], n_file.iloc[:, variables.split:]
+    n_i, n_o = n_file.iloc[:, :v.split], n_file.iloc[:, v.split:]
 
     ROW = random.randint(1, 50_000)
     return (np.array(i.iloc[ROW]), np.array(o.iloc[ROW]),
@@ -59,13 +61,14 @@ def create_directory(folder_name):
         pass
 
 
-def get_x_consts(inputs):
-    n_consts = np.array(pd.read_csv(variables.const_file).transpose())[0].tolist()
-    n_consts = n_consts[:inputs]
-    return n_consts
-
-
-def get_y_consts(inputs):
-    n_consts = np.array(pd.read_csv(variables.const_file).transpose())[0].tolist()
-    n_consts = n_consts[inputs:]
-    return n_consts
+def interpolate_fluxes(fluxes, wavelengths):
+    """
+    Interpolates 100 fluxes from TORUS into `n_interpolate` fluxes using a cubic spline, then returns
+    them over a set of predefined wavelengths.
+    :param fluxes:
+    :param wavelengths:
+    :return:
+    """
+    spline = CubicSpline(v.wavelengths, fluxes, extrapolate=False)
+    true_spline = spline(wavelengths)
+    return true_spline

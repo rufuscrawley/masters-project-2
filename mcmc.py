@@ -1,16 +1,12 @@
 import os
 import warnings
 
-import normalisation
-
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 import corner
 import emcee
-import keras
 from emcee.moves import WalkMove, StretchMove
 from scipy import stats
-import tensorflow as tf
 
 warnings.filterwarnings("ignore",
                         category=FutureWarning,
@@ -19,9 +15,9 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 import genetic_algorithm as ga
-import normalisation as norm
 import utilities
 import variables as v
+import network_variables as nv
 
 gene_spaces = ga.get_gene_spaces()
 
@@ -32,10 +28,7 @@ def model(theta):
     :param theta: Parameters being changed by the MCMC fit to find uncertainties.
     :return:
     """
-    x = tf.convert_to_tensor(theta, dtype=tf.float32)
-    flux_modelled_batch_log = v.call_model(np.array([x]))[0]
-    solution = norm.interpolate_fluxes(flux_modelled_batch_log, wavelengths)
-    return solution
+    return nv.predict(theta)
 
 
 def log_likelihood(theta, x, _y, _y_err):
@@ -79,7 +72,6 @@ wavelengths = [0.545, 0.638, 0.797,
 x_solutions = [np.float64(16.54132807784993), np.float64(1.1660064775871395),
                np.float64(2.439135833842663), np.float64(0.0003330905078751758)]
 
-x_solutions = norm.normalise_inputs(x_solutions)
 x_solutions = np.array(x_solutions)
 
 expected_model = model(x_solutions)
@@ -91,7 +83,6 @@ y_fluxes = [0.0655, 0.12, 0.216,
             1.581, 1.480, 1.260,
             0.176]
 y_fluxes = utilities.JanskyWavelengths(y_fluxes, wavelengths).convert_to_si()
-y_fluxes = norm.normalise_uneven_fluxes(y_fluxes, wavelengths)
 y_fluxes = np.array(y_fluxes)
 y_errs = y_fluxes * .1
 

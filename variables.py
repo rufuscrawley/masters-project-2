@@ -1,7 +1,10 @@
+import os
+
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 # Normalisation variables for the spreadsheets
 # Key values are [(Logarithmic normalisation), (Invert normalisation)]
-import keras
-import tensorflow as tf
+
 
 names = {
     "amin1": {
@@ -88,6 +91,3 @@ included = [
     "mdisc"
 ]
 split = len(included)
-model = keras.models.load_model(f"models/{filename}_model.keras")
-input_spec = tf.TensorSpec(shape=[None, split], dtype=tf.float32)
-call_model = tf.function(model, input_signature=[input_spec], reduce_retracing=True)
