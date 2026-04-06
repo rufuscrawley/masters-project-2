@@ -1,6 +1,5 @@
 import os
 
-import pandas as pd
 from scipy.interpolate import CubicSpline
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -83,7 +82,7 @@ def interpolate_fluxes(fluxes, wavelengths):
 def normalise_inputs(inputs):
     solution, i = [], 0
     for key in v.names.keys():
-        if key in variables.excluded: continue
+        if key not in variables.included: continue
         invert = -1 if v.names[key]["invert"] else 1
         if v.names[key]["logarithmic"]:
             result = np.log10(inputs[i])
@@ -99,7 +98,7 @@ def denormalise_inputs(solution):
     inputs = []
     i = 0
     for key in v.names.keys():
-        if key in variables.excluded: continue
+        if key not in variables.included: continue
         invert = -1 if v.names[key]["invert"] else 1
         n_solution = solution[i] * invert * x_consts[i]
         if v.names[key]["logarithmic"]:

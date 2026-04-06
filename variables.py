@@ -1,6 +1,7 @@
 # Normalisation variables for the spreadsheets
 # Key values are [(Logarithmic normalisation), (Invert normalisation)]
 import keras
+import tensorflow as tf
 
 names = {
     "amin1": {
@@ -12,6 +13,10 @@ names = {
         "invert": False
     },
     "inclinations": {
+        "logarithmic": False,
+        "invert": False
+    },
+    "ninc": {
         "logarithmic": False,
         "invert": False
     },
@@ -76,11 +81,13 @@ filename = "outputs"
 file = f"datasets/{filename}.csv"
 n_file = f'datasets/normalised/n_{filename}.csv'
 const_file = f'datasets/constants/const_{filename}.csv'
-excluded = ["ninc",
-            "Stellar_age",
-            "mass1",
-            "Temp_sublimation",
-            "alphadisc",
-            "rinner"]
-split = 15 - len(excluded)
+included = [
+    "height",
+    "betadisc",
+    "alphadisc",
+    "mdisc"
+]
+split = len(included)
 model = keras.models.load_model(f"models/{filename}_model.keras")
+input_spec = tf.TensorSpec(shape=[None, split], dtype=tf.float32)
+call_model = tf.function(model, input_signature=[input_spec], reduce_retracing=True)

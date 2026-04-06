@@ -1,10 +1,16 @@
+import os
 import warnings
+
+import normalisation
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 import corner
 import emcee
 import keras
 from emcee.moves import WalkMove, StretchMove
 from scipy import stats
+import tensorflow as tf
 
 warnings.filterwarnings("ignore",
                         category=FutureWarning,
@@ -19,8 +25,6 @@ import variables as v
 
 gene_spaces = ga.get_gene_spaces()
 
-nn = keras.models.load_model(f"models/{v.filename}_model.keras")
-
 
 def model(theta):
     """
@@ -28,8 +32,9 @@ def model(theta):
     :param theta: Parameters being changed by the MCMC fit to find uncertainties.
     :return:
     """
-    solution = nn.predict(np.array([theta]), verbose=0)[0]
-    solution = norm.interpolate_fluxes(solution, wavelengths)
+    x = tf.convert_to_tensor(theta, dtype=tf.float32)
+    flux_modelled_batch_log = v.call_model(np.array([x]))[0]
+    solution = norm.interpolate_fluxes(flux_modelled_batch_log, wavelengths)
     return solution
 
 
@@ -64,23 +69,27 @@ def log_probability(theta, x, y, y_err):
 
 
 # region variables
-wavelengths = [0.545, 0.638, 0.797, 1.22,
-               1.63, 2.2, 3.6, 4.5,
-               5.8, 8.0, 24, 61.1,
-               70, 74.8, 89.3, 1300]
+wavelengths = [0.545, 0.638, 0.797,
+               1.220, 1.630, 2.200,
+               3.600, 4.500, 5.800,
+               8.000, 24.00, 61.10,
+               70.00, 74.80, 89.30,
+               1300]
 
-x_solutions = [0.05059, 838.2612, 87.487,
-               185.33, 19.577, 1.2216,
-               9.49196e-5, 4.6972, 4357.21]
+x_solutions = [np.float64(16.54132807784993), np.float64(1.1660064775871395),
+               np.float64(2.439135833842663), np.float64(0.0003330905078751758)]
+
 x_solutions = norm.normalise_inputs(x_solutions)
 x_solutions = np.array(x_solutions)
 
 expected_model = model(x_solutions)
 
-y_fluxes = [0.06907, 0.1348, 0.276, 0.7187,
-            0.97, 0.7909, 0.5641, 0.4537,
-            0.4334, 0.5358, 1.445, 3.103,
-            3.344, 3.392, 3.048, 0.01512]
+y_fluxes = [0.0655, 0.12, 0.216,
+            0.483, 0.591, 0.511,
+            0.324, 0.220, 0.313,
+            0.370, 0.765, 1.420,
+            1.581, 1.480, 1.260,
+            0.176]
 y_fluxes = utilities.JanskyWavelengths(y_fluxes, wavelengths).convert_to_si()
 y_fluxes = norm.normalise_uneven_fluxes(y_fluxes, wavelengths)
 y_fluxes = np.array(y_fluxes)
@@ -100,7 +109,7 @@ sampler = emcee.EnsembleSampler(n_walkers, n_dim, log_probability,
                                 args=(expected_model, y_fluxes, y_errs),
                                 moves=[(StretchMove(), 0.8), (WalkMove(), 0.2)])
 print("Running sampler...")
-sampler.run_mcmc(pos, 1_000,
+sampler.run_mcmc(pos, 10_00,
                  progress=True)
 
 # burnout and thinning :)
@@ -113,7 +122,7 @@ samples = sampler.get_chain(discard=discard, thin=thin, flat=True)
 
 labels = []
 for name in v.names:
-    if name in v.excluded:
+    if name not in v.included:
         continue
     else:
         labels.append(name)

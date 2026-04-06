@@ -55,8 +55,9 @@ def main(training_ratio: float, do_keras: bool = False):
     # Read in our csv file
     print("Reading in .csv...")
     csv = pd.read_csv(v.file)
-    for value in v.excluded:
-        csv = csv.drop(value, axis=1)
+    for value in v.names.keys():
+        if value not in v.included:
+            csv = csv.drop(value, axis=1)
     # Randomise rows
     csv.sample(frac=1)
     # Drop any inf values
@@ -69,13 +70,15 @@ def main(training_ratio: float, do_keras: bool = False):
         print("File found! Splitting data...")
 
     except FileNotFoundError:
-
         # Split it into I/O form
+        print(f"Splitting at {v.split}")
         x, y = csv.iloc_xy(v.split)
+        print(x.keys())
+        print(y.keys())
         # Normalise each input column
         print("Normalising inputs...")
         for key in names:
-            if key in v.excluded:
+            if key not in v.included:
                 print(f"- Skipping {key}")
                 continue
             print(f"Normalising {key}")
@@ -114,6 +117,3 @@ def main(training_ratio: float, do_keras: bool = False):
     print("Creating test set!")
     test_set = x_test.join(y_test)
     test_set.to_csv(f'datasets/{v.filename}_test.csv', index=False)
-
-
-main(0.2, False)

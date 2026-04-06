@@ -1,7 +1,5 @@
 import os
 
-import keras
-
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from matplotlib import pyplot as plt
@@ -9,7 +7,7 @@ import scipy.stats as stats
 import pandas as pd
 import numpy as np
 import pygad
-
+import tensorflow as tf
 import normalisation as norm
 import variables as v
 import utilities
@@ -43,27 +41,6 @@ def run(wavelengths, fluxes, janskys=False):
     best_fluxes = norm.denormalise_fluxes(best_fluxes)
     plt.plot(v.wavelengths, best_fluxes, label="NN (predicted)")
 
-    # For reference, plot what our NN expects
-    # exp_solution = [
-    #     0.014783015,
-    #     936.3319832,
-    #     44.25,
-    #     96.41907064,
-    #     5.622734881,
-    #     1.35035425,
-    #     0.002611227,
-    #     2.211162497,
-    #     8883.089312
-    # ]
-
-    # exp_solution = [
-    #
-    # ]
-    # exp_solution = norm.normalise_inputs(exp_solution)
-    # exp_fluxes = v.model.predict(np.array([exp_solution]), verbose=0)[0]
-    # exp_fluxes = norm.denormalise_fluxes(exp_fluxes)
-    # plt.plot(v.wavelengths, exp_fluxes, label="NN (expected)")
-
     # Lastly, plot the interpolated input values
     plt.scatter(wavelengths, fluxes, label="Fluxes (raw)")
 
@@ -76,7 +53,8 @@ def run(wavelengths, fluxes, janskys=False):
     plt.ylim(10e-15, None)
     plt.show()
 
-    norm.denormalise_inputs(best_solution)
+    inputs = norm.denormalise_inputs(best_solution)
+    print(inputs)
 
 
 def find_solution(fluxes, wavelengths) -> list:
@@ -89,12 +67,9 @@ def find_solution(fluxes, wavelengths) -> list:
     def optimisor(_ga_instance, free_parameters, _solution_idx):
         # Suggest a set of free parameters, and then use NN to predict
         # a denormalised set of 100 fluxes.
-        #      3.6, 4.5, 5.8, 8.0, 24, 61.1,
-        #      70, 74.8, 89.3, 1300],
-        #     [0.06907, 0.1348, 0.276, 0.7187, 0.97, 0.7909,
-        #      0.5641, 0.4537, 0.4334, 0.5358, 1.445, 3.103,
-        #      3.344, 3.392, 3.048, 0.01512], True)
-        sol_guessed = v.model.predict(np.array([free_parameters]), verbose=0)[0]
+        x = tf.convert_to_tensor(free_parameters, dtype=tf.float32)
+        sol_guessed = v.call_model(np.array([x]))[0]
+
         s_1 = norm.denormalise_fluxes(sol_guessed)
         # Interpolate the solution over a predetermined number of fluxes.
         sol_interp = norm.interpolate_fluxes(s_1, wavelengths)
@@ -105,10 +80,10 @@ def find_solution(fluxes, wavelengths) -> list:
         return chi_squared
 
     # Set up a PyGad instance to apply our chi optimisor to.
-    ga = pygad.GA(num_generations=16,
+    ga = pygad.GA(num_generations=10,
                   num_parents_mating=8,
                   fitness_func=optimisor,
-                  sol_per_pop=512,
+                  sol_per_pop=500,
                   gene_space=get_gene_spaces(),
                   num_genes=v.split,
                   init_range_low=0.0,
@@ -126,9 +101,12 @@ def find_solution(fluxes, wavelengths) -> list:
     print(f"fitness: {sol_fitness}")
     return sol
 
+
 # run([0.545, 0.638, 0.797, 1.22, 1.63, 2.2,
 #      3.6, 4.5, 5.8, 8.0, 24, 61.1,
-#      70, 74.8, 89.3, 1300],
-#     [0.06907, 0.1348, 0.276, 0.7187, 0.97, 0.7909,
-#      0.5641, 0.4537, 0.4334, 0.5358, 1.445, 3.103,
-#      3.344, 3.392, 3.048, 0.01512], True)
+#      70, 74.8, 89.3],
+#     [0.0655, 0.12, 0.216,
+#      0.483, 0.591, 0.511,
+#      0.324, 0.220, 0.313,
+#      0.370, 0.765, 1.420,
+#      1.581, 1.480, 1.260], True)

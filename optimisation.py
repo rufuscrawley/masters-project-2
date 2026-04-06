@@ -20,8 +20,7 @@ def run_keras(x_train, y_train, x_val, y_val) -> None:
         model.add(keras.layers.Flatten())
         # Tune the number of layers.
         model.add(keras.layers.Dense(100, activation="relu"))
-
-        for i in range(hp.Int("layers", min_value=1, max_value=5)):
+        for i in range(hp.Int("layers", min_value=1, max_value=2)):
             model.add(
                 keras.layers.Dense(
                     # Tune number of units separately.
@@ -50,7 +49,6 @@ def run_keras(x_train, y_train, x_val, y_val) -> None:
 
 
 def run_model(x_train, y_train, x_val, y_val, file_path) -> None:
-
     print("Creating normalisation layer...")
     normalize = keras.layers.Normalization()
     normalize.adapt(x_train.to_numpy())
@@ -60,13 +58,9 @@ def run_model(x_train, y_train, x_val, y_val, file_path) -> None:
     model.add(keras.layers.Flatten())
     # Tune the number of layers.
     model.add(keras.layers.Dense(units=100, activation="relu"))
-    model.add(keras.layers.Dense(units=300, activation="relu"))
-    model.add(keras.layers.Dense(units=250, activation="relu"))
-    model.add(keras.layers.Dense(units=400, activation="relu"))
-    model.add(keras.layers.Dense(units=325, activation="relu"))
-    model.add(keras.layers.Dense(units=225, activation="relu"))
+    model.add(keras.layers.Dense(units=200, activation="relu"))
     model.add(keras.layers.Dense(units=100, activation="relu"))
-    learning_rate = 0.0044792
+    learning_rate = 0.004576
     model.compile(
         optimizer=keras.optimizers.AdamW(learning_rate=learning_rate),
         loss="mse",

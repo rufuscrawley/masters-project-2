@@ -1,4 +1,4 @@
-import genetic_algorithm as ga
+import ga_beta as ga
 import variables as v
 import conversion
 

@@ -120,7 +120,7 @@ def retrieve_inputs(solution):
     n_consts = np.array(pd.read_csv(variables.const_file).transpose())[0]
     i = 0
     for key in names.keys():
-        if key in variables.excluded: continue
+        if key not in variables.included: continue
         mult = -1 if names[key][1] else 1
         n_solution = solution[i] * mult * n_consts[i]
         if names[key][0]:
