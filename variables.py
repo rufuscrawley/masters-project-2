@@ -1,73 +1,25 @@
 import os
 
-
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 # Normalisation variables for the spreadsheets
 # Key values are [(Logarithmic normalisation), (Invert normalisation)]
 
 
-names = {
-    "amin1": {
-        "logarithmic": True,
-        "invert": True
-    },
-    "amax1": {
-        "logarithmic": True,
-        "invert": False
-    },
-    "inclinations": {
-        "logarithmic": False,
-        "invert": False
-    },
-    "ninc": {
-        "logarithmic": False,
-        "invert": False
-    },
-    "Stellar_age": {
-        "logarithmic": True,
-        "invert": False
-    },
-    "mass1": {
-        "logarithmic": False,
-        "invert": False
-    },
-    "Temp_sublimation": {
-        "logarithmic": True,
-        "invert": False
-    },
-    "router": {
-        "logarithmic": False,
-        "invert": False
-    },
-    "height": {
-        "logarithmic": False,
-        "invert": False
-    },
-    "betadisc": {
-        "logarithmic": False,
-        "invert": False
-    },
-    "alphadisc": {
-        "logarithmic": False,
-        "invert": False
-    },
-    "mdisc": {
-        "logarithmic": True,
-        "invert": True
-    },
-    "Stellar_radius": {
-        "logarithmic": False,
-        "invert": False
-    },
-    "Stellar_temperature": {
-        "logarithmic": False,
-        "invert": False
-    },
-    "rinner": {
-        "logarithmic": False,
-        "invert": False
-    },
-}
+names = {"amin1": True,
+         "amax1": True,
+         "inclinations": False,
+         "ninc": False,
+         "Stellar_age": True,
+         "mass1": False,
+         "Temp_sublimation": True,
+         "router": False,
+         "height": False,
+         "betadisc": False,
+         "alphadisc": False,
+         "mdisc": True,
+         "Stellar_radius": False,
+         "Stellar_temperature": False,
+         "rinner": False}
 wavelengths = [0.1, 0.11, 0.121, 0.133, 0.147, 0.161, 0.178, 0.195, 0.215, 0.237, 0.26, 0.286, 0.315, 0.347, 0.382,
                0.42, 0.462,
                0.509, 0.56, 0.616, 0.678, 0.746, 0.821, 0.903, 0.994, 1.09, 1.2, 1.32, 1.46, 1.6, 1.76, 1.94, 2.14,
@@ -83,7 +35,8 @@ wavelengths = [0.1, 0.11, 0.121, 0.133, 0.147, 0.161, 0.178, 0.195, 0.215, 0.237
 filename = "outputs"
 file = f"datasets/{filename}.csv"
 n_file = f'datasets/normalised/n_{filename}.csv'
-const_file = f'datasets/constants/const_{filename}.csv'
+const_file = f'datasets/normalised/const_{filename}.csv'
+test_file = f'datasets/{filename}_test.csv'
 included = [
     "height",
     "betadisc",

@@ -26,17 +26,17 @@ def get_gene_spaces():
     return gene_spaces
 
 
-def run(wavelengths, fluxes, janskys=False):
+def run(parameters,
+        generations=5, sol_per_pop=1000):
     # Set up our objects with the fluxes and wavelengths attached.
-
-    if janskys:
-        fluxes = utilities.JanskyWavelengths(fluxes, wavelengths).convert_to_si()
+    wavelengths, fluxes = parameters
     # Now, run these fluxes through the neural network.
     # Note that these do not need to be normalised - we will denormalise the NN output instead.
-    best_solution = find_solution(fluxes, wavelengths)
-
+    best_solution = find_solution(wavelengths, fluxes,
+                                  generations, sol_per_pop)
+    print("Found solution, plotting SED...")
     # Plot our GA solution
-    best_fluxes = nv.predict(best_solution)
+    best_fluxes = nv.predict_fluxes(best_solution)
     plt.plot(v.wavelengths, best_fluxes, label="NN (predicted)")
 
     # Lastly, plot the interpolated input values
@@ -51,8 +51,11 @@ def run(wavelengths, fluxes, janskys=False):
     plt.ylim(10e-15, None)
     plt.show()
 
+    return best_solution
 
-def find_solution(fluxes, wavelengths) -> list:
+
+def find_solution(wavelengths, fluxes,
+                  generations, sol_per_pop) -> list:
     """
     Runs the genetic algorithm to find a set of solution parameters.
     :return: An array of normalised values that best fit the chi-squared solution.
@@ -62,29 +65,34 @@ def find_solution(fluxes, wavelengths) -> list:
     def optimisor(_ga_instance, free_parameters, _solution_idx):
         # Suggest a set of free parameters, and then use NN to predict
         # a denormalised set of 100 fluxes.
-        sol_guessed = nv.predict(free_parameters)
+        sol_guessed = nv.predict_fluxes(free_parameters)
         # Interpolate the solution over a predetermined number of fluxes.
         sol_interp = utilities.interpolate_fluxes(sol_guessed, wavelengths)
         # Find chi-squared value - taking negative as PyGad optimises for minimum
         chi_squared = -1 * stats.chisquare(sol_interp, (np.array(fluxes)),
                                            sum_check=False, ddof=v.split).statistic
-        print(f"[{_ga_instance.generations_completed}] {chi_squared}")
         return chi_squared
 
+    def on_generation(ga_instance):
+        generation_num = ga_instance.generations_completed
+        best_fitness = ga_instance.best_solutions_fitness if ga_instance.best_solutions_fitness else 0
+        print(f"Generation {generation_num} reached. Best Fitness: {best_fitness[-1]} ")
+
     # Set up a PyGad instance to apply our chi optimisor to.
-    ga = pygad.GA(num_generations=25,
-                  num_parents_mating=8,
+    ga = pygad.GA(num_generations=generations,
+                  num_parents_mating=int(sol_per_pop / 10),
                   fitness_func=optimisor,
-                  sol_per_pop=1_000,
+                  sol_per_pop=sol_per_pop,
                   gene_space=get_gene_spaces(),
                   num_genes=v.split,
                   init_range_low=0.0,
                   init_range_high=1.0,
                   parent_selection_type="random",
-                  keep_parents=2,
+                  keep_parents=int(sol_per_pop / 40),
                   crossover_type="single_point",
                   mutation_type="random",
-                  mutation_percent_genes=15)
+                  mutation_percent_genes=15,
+                  on_generation=on_generation)
     ga.run()
     ga.plot_fitness()
     # Lastly, return the solution. Could possibly return the other
@@ -92,13 +100,3 @@ def find_solution(fluxes, wavelengths) -> list:
     sol, sol_fitness, sol_idx = ga.best_solution()
     print(f"fitness: {sol_fitness}")
     return sol
-
-
-run([0.545, 0.638, 0.797, 1.22, 1.63, 2.2,
-     3.6, 4.5, 5.8, 8.0, 24, 61.1,
-     70, 74.8, 89.3],
-    [0.0655, 0.12, 0.216,
-     0.483, 0.591, 0.511,
-     0.324, 0.220, 0.313,
-     0.370, 0.765, 1.420,
-     1.581, 1.480, 1.260], True)
