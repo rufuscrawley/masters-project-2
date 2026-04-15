@@ -82,13 +82,17 @@ def run(parameters, initial_guess, n_steps, n_walkers):
 
 
 def analyse_run(sampler):
-    # Fourth - implement burnout and thinning
     t_autocorrelation = sampler.get_autocorr_time(quiet=True)
     discard = int(2.0 * np.max(t_autocorrelation))
     thin = int(0.5 * np.min(t_autocorrelation))
     samples = sampler.get_chain(discard=discard,
                                 thin=thin,
                                 flat=True)
+    samples = samples.transpose()
+    final_samples = []
+    for n, sample in enumerate(samples):
+        final_samples.append(nv.denormalise(samples, nv.x_consts[n], nv.logs[n]))
+    final_samples = np.array(final_samples).transpose()
     # Fifth - do corner plots.
     labels = []
     for name in v.names:
@@ -96,7 +100,7 @@ def analyse_run(sampler):
             continue
         else:
             labels.append(name)
-    fig = corner.corner(samples,
+    fig = corner.corner(final_samples,
                         quantiles=[0.16, 0.5, 0.84],
                         labels=labels,
                         show_titles=True,

@@ -17,15 +17,15 @@ output_consts = pd.read_csv(v.const_file)
 x_consts = np.array(output_consts[:v.split])
 y_consts = np.array(output_consts[v.split:])
 y_consts = y_consts.flatten()
-
 logs = []
 for log in v.included:
     logs.append(v.names[log])
 
 
-def denormalise(col, consts):
+def denormalise(col, consts, log=True):
     col = col * consts
-    col = np.pow(10, col)
+    if log:
+        col = np.pow(10, col)
     return col
 
 
@@ -36,13 +36,14 @@ def normalise(val, const, log=False):
     return val
 
 
-def predict_fluxes(input_data: np.ndarray, unnormalised=True) -> Any:
+def predict_fluxes(input_data: np.ndarray, normalised=False) -> Any:
     """
     Predicts flux values for given stellar parameters.
+    :param normalised: Whether the input parameters are normalised.
     :param input_data: Can be a list of lists, a numpy array, or a pandas DataFrame. Example: [[1.3, 1.6, 5800, 1500], ...]
     :return: A numpy array of predicted flux values (shape: samples x 100).
     """
-    if unnormalised:
+    if not normalised:
         norm_xs = []
         for index, inputs in enumerate(input_data):
             s = normalise(inputs, x_consts[index], logs[index])

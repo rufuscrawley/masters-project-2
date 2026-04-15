@@ -36,7 +36,7 @@ def run(parameters,
                                   generations, sol_per_pop)
     print("Found solution, plotting SED...")
     # Plot our GA solution
-    best_fluxes = nv.predict_fluxes(best_solution)
+    best_fluxes = nv.predict_fluxes(best_solution, True)
     plt.plot(v.wavelengths, best_fluxes, label="NN (predicted)")
 
     # Lastly, plot the interpolated input values
@@ -65,7 +65,7 @@ def find_solution(wavelengths, fluxes,
     def optimisor(_ga_instance, free_parameters, _solution_idx):
         # Suggest a set of free parameters, and then use NN to predict
         # a denormalised set of 100 fluxes.
-        sol_guessed = nv.predict_fluxes(free_parameters)
+        sol_guessed = nv.predict_fluxes(free_parameters, True)
         # Interpolate the solution over a predetermined number of fluxes.
         sol_interp = utilities.interpolate_fluxes(sol_guessed, wavelengths)
         # Find chi-squared value - taking negative as PyGad optimises for minimum
