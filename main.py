@@ -18,12 +18,10 @@ fluxes = [0.0655, 0.120, 0.216,
 janksys = True
 if janksys:
     fluxes = utilities.JanskyWavelengths(fluxes, wavelengths).convert_to_si()
-
 parameters = wavelengths, fluxes
 
 # Sets up the neural network
 # pipeline.initiate(0.2, False)
-best_solution = ga.run(parameters, 5, 10_000)
-samples = mcmc.run(parameters, best_solution,
-                   1000, 20)
+best_solution = ga.run(parameters, 5, 25_000)
+samples = mcmc.run(parameters, best_solution, 2_500, 20)
 mcmc.analyse_run(samples)

@@ -7,7 +7,6 @@ warnings.filterwarnings("ignore",
                         category=FutureWarning,
                         module="arviz")
 import numpy as np
-from matplotlib import pyplot as plt
 
 import genetic_algorithm as ga
 import utilities
@@ -21,10 +20,11 @@ gene_spaces = ga.get_gene_spaces()
 def model(solution_guess, wavelengths):
     """
     Idealistic fit to compare against.
+    :param wavelengths:
     :param solution_guess: Parameters being changed by the MCMC fit to find uncertainties.
     :return:
     """
-    flux_guess = nv.predict_fluxes(solution_guess)
+    flux_guess = nv.predict_fluxes(solution_guess, True)
     flux_guess = utilities.interpolate_fluxes(flux_guess, wavelengths)
     # Returns 100 fluxes.
     return flux_guess
@@ -44,7 +44,6 @@ def log_likelihood(solution_guess, fluxes, y_err, wavelengths):
 def log_prior(solution_guess):
     for n, parameter in enumerate(solution_guess):
         if gene_spaces[n]["low"] < parameter < gene_spaces[n]["high"]:
-            # Continue iterating
             continue
         else:
             return -np.inf
@@ -60,24 +59,18 @@ def log_probability(solution_guess, fluxes, _y, y_err, wavelengths):
 
 
 def run(parameters, initial_guess, n_steps, n_walkers):
-    # First - take in the solutions from GA, predict a model from them
+    # Take in the solutions from GA, predict a model from them
     wavelengths, y_fluxes = parameters
     expected_model = model(initial_guess, wavelengths)
     y_fluxes = np.array(y_fluxes)
-    y_errs = y_fluxes * .1
-
-    # Third - set up the walker
+    # Set up the walker
     print("Running sampler...")
     n_walkers *= v.split
     n_dim = v.split
     pos = initial_guess + (1e-4 * np.random.randn(n_walkers, n_dim))
     sampler = emcee.EnsembleSampler(n_walkers, n_dim, log_probability,
-                                    args=(expected_model, y_fluxes,
-                                          y_errs, wavelengths))
-    sampler.run_mcmc(pos,
-                     n_steps,
-                     progress=True)
-
+                                    args=(expected_model, y_fluxes, y_fluxes * .1, wavelengths))
+    sampler.run_mcmc(pos, n_steps, progress=True)
     return sampler
 
 
@@ -88,21 +81,26 @@ def analyse_run(sampler):
     samples = sampler.get_chain(discard=discard,
                                 thin=thin,
                                 flat=True)
+
     samples = samples.transpose()
-    final_samples = []
-    for n, sample in enumerate(samples):
-        final_samples.append(nv.denormalise(samples, nv.x_consts[n], nv.logs[n]))
-    final_samples = np.array(final_samples).transpose()
-    # Fifth - do corner plots.
+    n_samples = []
+    for n, inputs in enumerate(samples):
+        s = nv.denormalise(inputs, nv.x_consts[n], nv.logs[n])
+        n_samples.append(s)
+    n_samples = np.array(n_samples)
+    n_samples = n_samples.transpose()
+
     labels = []
     for name in v.names:
         if name not in v.included:
             continue
         else:
             labels.append(name)
-    fig = corner.corner(final_samples,
+    fig = corner.corner(n_samples,
                         quantiles=[0.16, 0.5, 0.84],
                         labels=labels,
                         show_titles=True,
-                        title_fmt=".2e")
-    plt.show()
+                        title_fmt=".2e",
+                        axes_scale=["linear", "linear", "linear", "log"])
+    ##TODO - dynamic axis scaling
+    fig.show()

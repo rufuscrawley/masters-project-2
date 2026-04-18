@@ -54,8 +54,7 @@ def run(parameters,
     return best_solution
 
 
-def find_solution(wavelengths, fluxes,
-                  generations, sol_per_pop) -> list:
+def find_solution(wavelengths, fluxes, generations, sol_per_pop) -> list:
     """
     Runs the genetic algorithm to find a set of solution parameters.
     :return: An array of normalised values that best fit the chi-squared solution.
@@ -91,12 +90,10 @@ def find_solution(wavelengths, fluxes,
                   keep_parents=int(sol_per_pop / 40),
                   crossover_type="single_point",
                   mutation_type="random",
-                  mutation_percent_genes=15,
+                  mutation_percent_genes=20,
                   on_generation=on_generation)
     ga.run()
     ga.plot_fitness()
-    # Lastly, return the solution. Could possibly return the other
-    # two variables, but doesn't seem necessary (for now)
     sol, sol_fitness, sol_idx = ga.best_solution()
     print(f"fitness: {sol_fitness}")
     return sol
