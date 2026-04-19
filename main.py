@@ -4,17 +4,26 @@ import pipeline
 import utilities
 import mcmc
 import genetic_algorithm as ga
+import variables as v
+import numpy as np
+import astropy.units as u
 
-wavelengths = [0.545, 0.638, 0.797,
-               1.22, 1.63, 2.2,
-               3.6, 4.5, 5.8,
-               8.0, 24, 61.1,
-               70, 74.8, 89.3]
-fluxes = [0.0655, 0.120, 0.216,
-          0.483, 0.591, 0.511,
-          0.324, 0.220, 0.313,
-          0.370, 0.765, 1.42,
-          1.581, 1.480, 1.260]
+wavelengths = np.array([0.545, 0.638, 0.797,
+                        1.22, 1.63, 2.2,
+                        3.6, 4.5, 5.8,
+                        8.0, 24, 61.1,
+                        70, 74.8, 89.3,
+                        1300])
+fluxes = np.array([0.0655, 0.120, 0.216,
+                   0.483, 0.591, 0.511,
+                   0.324, 0.220, 0.313,
+                   0.370, 0.765, 1.42,
+                   1.581, 1.480, 1.260,
+                   0.1758])
+
+scaling_factor = ((190 * u.pc) / v.distance_scalar) ** 2
+fluxes = fluxes * scaling_factor
+
 janksys = True
 if janksys:
     fluxes = utilities.JanskyWavelengths(fluxes, wavelengths).convert_to_si()

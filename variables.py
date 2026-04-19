@@ -1,5 +1,7 @@
 import os
 
+import astropy.units as u
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 # Normalisation variables for the spreadsheets
 # Key values are [(Logarithmic normalisation), (Invert normalisation)]
@@ -44,3 +46,4 @@ included = [
     "mdisc"
 ]
 split = len(included)
+distance_scalar = 100 * u.pc
