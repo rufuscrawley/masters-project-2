@@ -54,6 +54,7 @@ def predict_fluxes(input_data: np.ndarray, normalised=False) -> Any:
 
     new_x = tf.convert_to_tensor(norm_xs.flatten())
     predictions_scaled = call_model([new_x])
-    predictions_flux = denormalise(predictions_scaled, y_consts)
+    predictions_flux = denormalise(predictions_scaled, y_consts)[0]
 
-    return predictions_flux[0]
+
+    return predictions_flux

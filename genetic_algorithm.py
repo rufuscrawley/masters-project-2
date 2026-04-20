@@ -10,6 +10,7 @@ import pygad
 import variables as v
 import network_variables as nv
 import utilities
+import astropy.units as u
 
 
 def get_gene_spaces():
@@ -23,24 +24,34 @@ def get_gene_spaces():
         gene_spaces.append({"low": n_csv[column].min(),
                             "high": n_csv[column].max()})
         split_value += 1
+    # Now apply gene space for extinction (our expected final value)
+    gene_spaces.append({"low": v.ext_arr.min(),
+                        "high": v.ext_arr.max()})
+
     return gene_spaces
 
 
-def run(parameters,
+def run(parameters, errors,
         generations=5, sol_per_pop=1000):
     # Set up our objects with the fluxes and wavelengths attached.
     wavelengths, fluxes = parameters
     # Now, run these fluxes through the neural network.
     # Note that these do not need to be normalised - we will denormalise the NN output instead.
-    best_solution = find_solution(wavelengths, fluxes,
+    best_solution = find_solution(wavelengths, fluxes, errors,
                                   generations, sol_per_pop)
     print("Found solution, plotting SED...")
     # Plot our GA solution
-    best_fluxes = nv.predict_fluxes(best_solution, True)
-    plt.plot(v.wavelengths, best_fluxes, label="NN (predicted)")
+    best_fluxes = nv.predict_fluxes(best_solution[:-1], True)
+    best_fluxes[:v.n_finish] = best_fluxes[:v.n_finish] * v.extmod.extinguish(v.wavelengths[:v.n_finish] * u.micron,
+                                                                              best_solution[-1])
+
+    sol_interp = utilities.interpolate_fluxes(best_fluxes, wavelengths)
+    plt.plot(v.wavelengths, best_fluxes, label=f"NN (predicted) (Ext = {best_solution[-1]})")
+    # plt.plot(wavelengths, sol_interp, label=f"NN (interp)")
 
     # Lastly, plot the interpolated input values
-    plt.scatter(wavelengths, fluxes, label="Fluxes (raw)")
+    plt.scatter(wavelengths, fluxes, label="Fluxes (raw)", linewidths=.3)
+    plt.errorbar(wavelengths, fluxes, yerr=errors, fmt='none')
 
     plt.title("Observed SED")
     plt.xlabel("Wavelength (Microns)")
@@ -54,7 +65,8 @@ def run(parameters,
     return best_solution
 
 
-def find_solution(wavelengths, fluxes, generations, sol_per_pop) -> list:
+def find_solution(wavelengths, fluxes, err_fluxes,
+                  generations, sol_per_pop) -> list:
     """
     Runs the genetic algorithm to find a set of solution parameters.
     :return: An array of normalised values that best fit the chi-squared solution.
@@ -64,13 +76,28 @@ def find_solution(wavelengths, fluxes, generations, sol_per_pop) -> list:
     def optimisor(_ga_instance, free_parameters, _solution_idx):
         # Suggest a set of free parameters, and then use NN to predict
         # a denormalised set of 100 fluxes.
-        sol_guessed = nv.predict_fluxes(free_parameters, True)
+        sol_guessed = nv.predict_fluxes(free_parameters[:-1], True)
+
+        # Apply extinction to the fluxes
+        sol_guessed[:v.n_finish] = (sol_guessed[:v.n_finish] *
+                                    v.extmod.extinguish(v.wavelengths[:v.n_finish]
+                                                        * u.micron,
+                                                        Av=free_parameters[-1]))
+
         # Interpolate the solution over a predetermined number of fluxes.
         sol_interp = utilities.interpolate_fluxes(sol_guessed, wavelengths)
         # Find chi-squared value - taking negative as PyGad optimises for minimum
-        chi_squared = -1 * stats.chisquare(sol_interp, (np.array(fluxes)),
-                                           sum_check=False, ddof=v.split).statistic
-        return chi_squared
+
+        sol_interp = np.log10(sol_interp)
+        l_fluxes = np.log10(fluxes)
+        # Correctly propagate errors here
+        l_errs = (err_fluxes / fluxes) * (1 / np.log(10))
+
+        # chi_squared = stats.chisquare(sol_interp, l_fluxes,
+        #                               sum_check=False, ddof=(9)).statistic
+
+        mse = -0.5 * np.sum(((sol_interp - l_fluxes) / l_errs) ** 2)
+        return mse
 
     def on_generation(ga_instance):
         generation_num = ga_instance.generations_completed
@@ -83,7 +110,7 @@ def find_solution(wavelengths, fluxes, generations, sol_per_pop) -> list:
                   fitness_func=optimisor,
                   sol_per_pop=sol_per_pop,
                   gene_space=get_gene_spaces(),
-                  num_genes=v.split,
+                  num_genes=(v.split + 1),
                   init_range_low=0.0,
                   init_range_high=1.0,
                   parent_selection_type="random",
