@@ -21,13 +21,14 @@ fluxes = np.array([0.0655, 0.120, 0.216,
                    1.581, 1.480, 1.260,
                    0.1758])
 
-scaling_factor = ((190 * u.pc) / v.distance_scalar) ** 2
-fluxes = fluxes * scaling_factor
-
 janksys = True
 if janksys:
     fluxes = utilities.JanskyWavelengths(fluxes, wavelengths).convert_to_si()
+
+scaling_factor = ((190 * u.pc) / v.distance_scalar) ** 2
+# fluxes = fluxes * scaling_factor
 parameters = wavelengths, fluxes
+# print(parameters)
 
 # Sets up the neural network
 # pipeline.initiate(0.2, False)

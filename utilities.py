@@ -22,7 +22,7 @@ class JanskyWavelengths:
 
     def convert_to_si(self):
         astro_janskys = (self.fluxes * u.Jy).to(u.erg / u.cm ** 2 / u.s / u.Hz)
-        return astro_janskys.value * 3e14 / np.array(self.wavelengths)
+        return astro_janskys.value * 3e8 / (np.array(self.wavelengths) * 1e-6)
 
 
 class SIWavelengths:
