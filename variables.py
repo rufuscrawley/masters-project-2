@@ -47,10 +47,17 @@ n_file = f'datasets/normalised/n_{filename}.csv'
 const_file = f'datasets/normalised/const_{filename}.csv'
 test_file = f'datasets/{filename}_test.csv'
 included = [
+    "amin1",
+    "amax1",
+    "inclinations",
+    "Temp_sublimation",
+    "router",
     "height",
     "betadisc",
     "alphadisc",
-    "mdisc"
+    "mdisc",
+    "Stellar_radius",
+    "Stellar_temperature",
 ]
 split = len(included)
 distance_scalar = 100 * u.pc

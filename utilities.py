@@ -71,4 +71,6 @@ def interpolate_fluxes(fluxes, wavelengths):
     """
     spline = CubicSpline(v.wavelengths, fluxes, extrapolate=False)
     true_spline = spline(wavelengths)
+
+    true_spline = np.clip(true_spline, 1e-24, None)
     return true_spline

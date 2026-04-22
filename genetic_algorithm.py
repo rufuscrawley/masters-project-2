@@ -16,13 +16,15 @@ def get_gene_spaces():
     # Set up the gene space for our parameters.
     split_value = 0
     n_csv = pd.read_csv(v.n_file)
+
     gene_spaces = []
     for column in n_csv:
         if split_value == v.split:
             break
-        gene_spaces.append({"low": n_csv[column].min(),
-                            "high": n_csv[column].max()})
+        gene_spaces.append({"low": n_csv[column].min() * 1.05,
+                            "high": n_csv[column].max() * 0.95})
         split_value += 1
+
     # Now apply gene space for extinction (our expected final value)
     gene_spaces.append({"low": 0.0,
                         "high": 3.0})
@@ -86,6 +88,7 @@ def find_solution(wavelengths, fluxes, _err_fluxes,
 
         # Interpolate the solution over a predetermined number of fluxes.
         sol_interp = utilities.interpolate_fluxes(sol_guessed, wavelengths)
+
         sol_interp = np.log10(sol_interp)
         l_fluxes = np.log10(fluxes)
 

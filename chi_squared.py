@@ -35,7 +35,8 @@ def plot_residues(tests):
     wavelengths = np.repeat(v.wavelengths, tests)
 
     plt.hist2d(wavelengths, residue_list,
-               bins=100, norm=LogNorm())
+               bins=100, norm=LogNorm(), cmin=3)
+
     plt.grid()
     plt.show()
 
@@ -58,4 +59,4 @@ def plot_comparisons(tests):
 
 
 plot_comparisons(10)
-# plot_residues(1000)
+plot_residues(1000)

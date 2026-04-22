@@ -1,7 +1,7 @@
 # Central file to collate all relevant functions
 
 import numpy as np
-# import astropy.units as u
+import astropy.units as u
 
 import pipeline
 import utilities
@@ -13,17 +13,17 @@ im_lupi = (np.array([0.545, 0.638, 0.797,
                      1.22, 1.63, 2.2,
                      3.6, 4.5, 5.8,
                      8.0, 24, 61.1,
-                     70, 74.8, 89.3]),
+                     70, 74.8, 89.3, 1300]),
            np.array([0.0655, 0.120, 0.216,
                      0.483, 0.591, 0.511,
                      0.324, 0.220, 0.313,
                      0.370, 0.765, 1.42,
-                     1.581, 1.480, 1.260]),
+                     1.581, 1.480, 1.260, 0.1758]),
            np.array([0.0007, 0.00012, 0.0022,
                      0.0048, 0.0059, 0.0051,
                      0.0184, 0.0178, 0.0156,
                      0.0223, 0.0708, 0.0220,
-                     0.127, 0.37, 0.51]))
+                     0.127, 0.37, 0.51, 0.0351]))
 
 hd_142666 = (np.array([0.44,
                        0.55, 0.71, 0.7625,
@@ -79,18 +79,19 @@ dr_tau = (np.array([0.36, 0.44, 0.55, 0.64,
                     0.850, 0.170, 0.050, 0.080,
                     0.007, 0.020, 0.011]))
 
-wavelengths, fluxes, errors = dr_tau
+wavelengths, fluxes, errors = im_lupi
 janksys = True
 if janksys:
     fluxes = utilities.JanskyWavelengths(fluxes, wavelengths).convert_to_si()
     errors = utilities.JanskyWavelengths(errors, wavelengths).convert_to_si()
 
-# scaling_factor = float(((150 * u.pc) / v.distance_scalar) ** 2)
+scaling_factor = float(((190 * u.pc) / v.distance_scalar) ** 2)
+print(f"Scaling by {scaling_factor}")
 # fluxes = fluxes * scaling_factor
 parameters = wavelengths, fluxes
 print("Here goes nothing...")
 # Sets up the neural network
 # pipeline.initiate(0.2, False)
-best_solution = ga.run(parameters, errors, 4, 15_000)
-samples = mcmc.run(parameters, best_solution, 3_000, 25)
-mcmc.analyse_run(samples)
+best_solution = ga.run(parameters, errors, 4, 10_000)
+samples = mcmc.run(parameters, best_solution, 1_000, 75)
+mcmc.analyse_run(samples)  #

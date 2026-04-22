@@ -70,9 +70,9 @@ def run(parameters, initial_guess, n_steps, n_walkers):
     expected_model = model(initial_guess, wavelengths)
     y_fluxes = np.array(y_fluxes)
     # Set up the walker
-    print("Running sampler...")
     n_dim = v.split + 1
-    pos = initial_guess + (1e-4 * np.random.randn(n_walkers, n_dim))
+    print(f"Running sampler over {n_dim} dimensions...")
+    pos = initial_guess + (1e-3 * np.random.randn(n_walkers, n_dim))
     sampler = emcee.EnsembleSampler(n_walkers, n_dim, log_probability,
                                     args=(expected_model, y_fluxes, y_fluxes * .1, wavelengths))
     sampler.run_mcmc(pos, n_steps, progress=True)
@@ -114,6 +114,6 @@ def analyse_run(sampler):
                         labels=labels,
                         show_titles=True,
                         title_fmt=".2e",
-                        axes_scale=["linear", "linear", "linear", "log", "linear"])
+                        smooth=1)
     ##TODO - dynamic axis scaling
     fig.show()
