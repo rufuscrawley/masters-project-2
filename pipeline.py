@@ -16,9 +16,10 @@ norm_con_list = []
 def normalise(self, col, log=False):
     if log:
         self.loc[:, col] = np.log10(self[col])
-    max_val = max(self[col], key=abs)
-    self.loc[:, col] = self[col].map(lambda val: val / max_val)
-    norm_con_list.append(max_val)
+    mean = self[col].mean()
+    std = self[col].std()
+    self.loc[:, col] = self[col].map(lambda val: (val - mean) / std)
+    norm_con_list.append((mean, std))
 
 
 def dropinf(self):

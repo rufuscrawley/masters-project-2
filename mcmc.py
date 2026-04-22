@@ -71,7 +71,6 @@ def run(parameters, initial_guess, n_steps, n_walkers):
     y_fluxes = np.array(y_fluxes)
     # Set up the walker
     print("Running sampler...")
-    n_walkers *= (v.split + 1)
     n_dim = v.split + 1
     pos = initial_guess + (1e-4 * np.random.randn(n_walkers, n_dim))
     sampler = emcee.EnsembleSampler(n_walkers, n_dim, log_probability,
@@ -80,24 +79,20 @@ def run(parameters, initial_guess, n_steps, n_walkers):
     return sampler
 
 
-def analyse_run(sampler, n_steps):
+def analyse_run(sampler):
     t_autocorrelation = sampler.get_autocorr_time(quiet=True)
     discard = int(2.0 * np.max(t_autocorrelation))
     thin = int(0.5 * np.min(t_autocorrelation))
     samples = sampler.get_chain(discard=discard,
                                 thin=thin,
                                 flat=True)
-    print(samples.shape)
 
     samples, extinctions = samples[:, :-1], samples[:, -1]
     samples = samples.transpose()
-    print("HI")
-    print(samples)
-    print(len(samples))
 
     n_samples = []
     for n, inputs in enumerate(samples):
-        s = nv.denormalise(inputs, nv.x_consts[n], nv.logs[n])
+        s = nv.denormalise(inputs, nv.mean_x[n], nv.std_x[n], nv.logs[n])
         n_samples.append(s)
 
     n_samples = np.array(n_samples)

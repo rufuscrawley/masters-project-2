@@ -3,7 +3,6 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from matplotlib import pyplot as plt
-import scipy.stats as stats
 import pandas as pd
 import numpy as np
 import pygad
@@ -25,8 +24,8 @@ def get_gene_spaces():
                             "high": n_csv[column].max()})
         split_value += 1
     # Now apply gene space for extinction (our expected final value)
-    gene_spaces.append({"low": v.ext_arr.min(),
-                        "high": v.ext_arr.max()})
+    gene_spaces.append({"low": 0.0,
+                        "high": 3.0})
 
     return gene_spaces
 
@@ -44,14 +43,15 @@ def run(parameters, errors,
     best_fluxes = nv.predict_fluxes(best_solution[:-1], True)
     best_fluxes[:v.n_finish] = best_fluxes[:v.n_finish] * v.extmod.extinguish(v.wavelengths[:v.n_finish] * u.micron,
                                                                               best_solution[-1])
-
-    sol_interp = utilities.interpolate_fluxes(best_fluxes, wavelengths)
-    plt.plot(v.wavelengths, best_fluxes, label=f"NN (predicted) (Ext = {best_solution[-1]})")
-    # plt.plot(wavelengths, sol_interp, label=f"NN (interp)")
-
     # Lastly, plot the interpolated input values
-    plt.scatter(wavelengths, fluxes, label="Fluxes (raw)", linewidths=.3)
+    plt.plot(v.wavelengths, best_fluxes, label=f"NN (predicted) (Ext = {best_solution[-1]})")
+    plt.scatter(wavelengths, fluxes, label="Fluxes (raw)", linewidths=.1)
     plt.errorbar(wavelengths, fluxes, yerr=errors, fmt='none')
+
+    # Alternately, test the others
+    # sol_interp = utilities.interpolate_fluxes(best_fluxes, wavelengths)
+    # plt.plot(wavelengths, sol_interp, label="Predicted")
+    # plt.plot(wavelengths, fluxes, label="Expected")
 
     plt.title("Observed SED")
     plt.xlabel("Wavelength (Microns)")
@@ -65,7 +65,7 @@ def run(parameters, errors,
     return best_solution
 
 
-def find_solution(wavelengths, fluxes, err_fluxes,
+def find_solution(wavelengths, fluxes, _err_fluxes,
                   generations, sol_per_pop) -> list:
     """
     Runs the genetic algorithm to find a set of solution parameters.
@@ -86,23 +86,16 @@ def find_solution(wavelengths, fluxes, err_fluxes,
 
         # Interpolate the solution over a predetermined number of fluxes.
         sol_interp = utilities.interpolate_fluxes(sol_guessed, wavelengths)
-        # Find chi-squared value - taking negative as PyGad optimises for minimum
-
         sol_interp = np.log10(sol_interp)
         l_fluxes = np.log10(fluxes)
-        # Correctly propagate errors here
-        l_errs = (err_fluxes / fluxes) * (1 / np.log(10))
 
-        # chi_squared = stats.chisquare(sol_interp, l_fluxes,
-        #                               sum_check=False, ddof=(9)).statistic
-
-        mse = -0.5 * np.sum(((sol_interp - l_fluxes) / l_errs) ** 2)
+        mse = -1 * (np.sum((l_fluxes - sol_interp) ** 2)) / len(l_fluxes)
         return mse
 
     def on_generation(ga_instance):
         generation_num = ga_instance.generations_completed
         best_fitness = ga_instance.best_solutions_fitness if ga_instance.best_solutions_fitness else 0
-        print(f"Generation {generation_num} reached. Best Fitness: {best_fitness[-1]} ")
+        print(f"Generation {generation_num} finished. Best Fitness: {-1 * best_fitness[-1]} ")
 
     # Set up a PyGad instance to apply our chi optimisor to.
     ga = pygad.GA(num_generations=generations,
@@ -111,13 +104,13 @@ def find_solution(wavelengths, fluxes, err_fluxes,
                   sol_per_pop=sol_per_pop,
                   gene_space=get_gene_spaces(),
                   num_genes=(v.split + 1),
-                  init_range_low=0.0,
-                  init_range_high=1.0,
+                  init_range_low=0.25,
+                  init_range_high=0.75,
                   parent_selection_type="random",
                   keep_parents=int(sol_per_pop / 40),
                   crossover_type="single_point",
                   mutation_type="random",
-                  mutation_percent_genes=20,
+                  mutation_percent_genes=33,
                   on_generation=on_generation)
     ga.run()
     ga.plot_fitness()

@@ -25,7 +25,7 @@ def plot_residues(tests):
         ROW: int = random.randint(1, 10000)
         x_row, y_row = (np.array(x.iloc[ROW]), np.array(y.iloc[ROW]))
         results = nv.predict_fluxes(x_row, True)
-        y_row = nv.denormalise(y_row, nv.y_consts)
+        y_row = nv.denormalise(y_row, nv.mean_y, nv.std_y)
         residues = (np.log10(y_row) - np.log10(results)) / np.log10(y_row)
         residue_list.append(residues)
 
@@ -35,7 +35,7 @@ def plot_residues(tests):
     wavelengths = np.repeat(v.wavelengths, tests)
 
     plt.hist2d(wavelengths, residue_list,
-               bins=50, norm=LogNorm())
+               bins=100, norm=LogNorm())
     plt.grid()
     plt.show()
 
@@ -49,7 +49,7 @@ def plot_comparisons(tests):
         x_row, y_row = (np.array(x.iloc[ROW]), np.array(y.iloc[ROW]))
 
         results = nv.predict_fluxes(x_row, True)
-        y_row = nv.denormalise(y_row, nv.y_consts)
+        y_row = nv.denormalise(y_row, nv.mean_y, nv.std_y)
 
         plt.loglog(v.wavelengths, y_row, label="exp")
         plt.loglog(v.wavelengths, results, label="pred")
@@ -57,5 +57,5 @@ def plot_comparisons(tests):
         plt.show()
 
 
-# plot_comparisons(10)
-plot_residues(1000)
+plot_comparisons(10)
+# plot_residues(1000)

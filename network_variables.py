@@ -13,27 +13,29 @@ import variables as v
 model = keras.models.load_model(f"models/{v.filename}_model.keras", safe_mode=False)
 input_spec = tf.TensorSpec(shape=[None, v.split], dtype=tf.float32)
 call_model = tf.function(model, input_signature=[input_spec], reduce_retracing=True)
+
 output_consts = pd.read_csv(v.const_file)
 x_consts = np.array(output_consts[:v.split])
+mean_x, std_x = x_consts[:, 0], x_consts[:, 1]
 y_consts = np.array(output_consts[v.split:])
-y_consts = y_consts.flatten()
+mean_y, std_y = y_consts[:, 0], y_consts[:, 1]
+
 logs = []
 for log in v.included:
     logs.append(v.names[log])
 
 
-def denormalise(col, consts, log=True):
-    col = col * consts
-    if log:
+def denormalise(col, mean, std, log_norm=True):
+    col = (col * std) + mean
+    if log_norm:
         col = np.pow(10, col)
     return col
 
 
-def normalise(val, const, log=False):
-    if log:
+def normalise(val, mean, std, log_norm=False):
+    if log_norm:
         val = np.log10(val)
-    val = val / const
-    return val
+    return (val - mean) / std
 
 
 def predict_fluxes(input_data: np.ndarray, normalised=False) -> Any:
@@ -46,7 +48,7 @@ def predict_fluxes(input_data: np.ndarray, normalised=False) -> Any:
     if not normalised:
         norm_xs = []
         for index, inputs in enumerate(input_data):
-            s = normalise(inputs, x_consts[index], logs[index])
+            s = normalise(inputs, mean_x[index], std_x[index], logs[index])
             norm_xs.append(s)
         norm_xs = np.array(norm_xs)
     else:
@@ -54,7 +56,6 @@ def predict_fluxes(input_data: np.ndarray, normalised=False) -> Any:
 
     new_x = tf.convert_to_tensor(norm_xs.flatten())
     predictions_scaled = call_model([new_x])
-    predictions_flux = denormalise(predictions_scaled, y_consts)[0]
-
+    predictions_flux = denormalise(predictions_scaled, mean_y, std_y)[0]
 
     return predictions_flux
