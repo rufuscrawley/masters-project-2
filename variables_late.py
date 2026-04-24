@@ -1,5 +1,7 @@
 import warnings
-from typing import Any
+
+import astropy.units as u
+from scipy.interpolate import CubicSpline, PchipInterpolator
 
 # Suppress only UserWarnings from the module
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -8,21 +10,21 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-import variables as v
+import variables_early as ve
 
-model = keras.models.load_model(f"models/{v.filename}_model.keras", safe_mode=False)
-input_spec = tf.TensorSpec(shape=[None, v.split], dtype=tf.float32)
+model = keras.models.load_model(f"models/{ve.filename}_model.keras", safe_mode=False)
+input_spec = tf.TensorSpec(shape=[None, ve.split], dtype=tf.float32)
 call_model = tf.function(model, input_signature=[input_spec], reduce_retracing=True)
 
-output_consts = pd.read_csv(v.const_file)
-x_consts = np.array(output_consts[:v.split])
+output_consts = pd.read_csv(ve.const_file)
+x_consts = np.array(output_consts[:ve.split])
 mean_x, std_x = x_consts[:, 0], x_consts[:, 1]
-y_consts = np.array(output_consts[v.split:])
+y_consts = np.array(output_consts[ve.split:])
 mean_y, std_y = y_consts[:, 0], y_consts[:, 1]
 
 logs = []
-for log in v.included:
-    logs.append(v.names[log])
+for log in ve.included:
+    logs.append(ve.names[log])
 
 
 def denormalise(col, mean, std, log_norm=True):
@@ -38,7 +40,7 @@ def normalise(val, mean, std, log_norm=False):
     return (val - mean) / std
 
 
-def predict_fluxes(input_data: np.ndarray, normalised=False) -> Any:
+def predict_fluxes(input_data: np.ndarray, normalised=False) -> np.ndarray:
     """
     Predicts flux values for given stellar parameters.
     :param normalised: Whether the input parameters are normalised.
@@ -59,3 +61,24 @@ def predict_fluxes(input_data: np.ndarray, normalised=False) -> Any:
     predictions_flux = denormalise(predictions_scaled, mean_y, std_y)[0]
 
     return predictions_flux
+
+
+def interpolate_fluxes(fluxes, wavelengths) -> np.ndarray:
+    """
+    Interpolates 100 fluxes from TORUS into `n_interpolate` fluxes using a cubic spline, then returns
+    them over a set of predefined wavelengths.
+    :param fluxes:
+    :param wavelengths:
+    :return:
+    """
+    spline = PchipInterpolator(ve.wavelengths, fluxes, extrapolate=False)
+    true_spline = spline(wavelengths)
+
+    true_spline = np.clip(true_spline, 1e-24, None)
+    return true_spline
+
+
+def apply_extinction(fluxes, a_v) -> None:
+    fluxes[:ve.n_finish] *= ve.extmod.extinguish(ve.wavelengths[:ve.n_finish]
+                                                 * u.micron,
+                                                 Av=a_v)

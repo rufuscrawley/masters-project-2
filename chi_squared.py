@@ -3,8 +3,8 @@ import os
 from matplotlib import pyplot as plt
 from matplotlib.colors import LogNorm
 
-import variables as v
-import network_variables as nv
+import variables_early as v
+import variables_late as nv
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import numpy as np
@@ -29,13 +29,12 @@ def plot_residues(tests):
         residues = (np.log10(y_row) - np.log10(results)) / np.log10(y_row)
         residue_list.append(residues)
 
-    residue_list = np.array(residue_list)
-    residue_list = np.transpose(residue_list)
+    residue_list = np.array(residue_list).transpose()
     residue_list = residue_list.flatten()
     wavelengths = np.repeat(v.wavelengths, tests)
 
     plt.hist2d(wavelengths, residue_list,
-               bins=100, norm=LogNorm(), cmin=3)
+               bins=100, norm=LogNorm())
 
     plt.grid()
     plt.show()
@@ -58,5 +57,5 @@ def plot_comparisons(tests):
         plt.show()
 
 
-plot_comparisons(10)
+# plot_comparisons(10)
 plot_residues(1000)

@@ -1,12 +1,7 @@
-import os
-
 import astropy.units as u
 from dust_extinction.parameter_averages import G23
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 # Normalisation variables for the spreadsheets
-# Key values are [(Logarithmic normalisation)]
-
 
 names = {"amin1": True,
          "amax1": True,
@@ -60,7 +55,6 @@ included = [
     "Stellar_temperature",
 ]
 split = len(included)
-distance_scalar = 100 * u.pc
 
 # Set up extinction variables
 extmod = G23(Rv=3.1)

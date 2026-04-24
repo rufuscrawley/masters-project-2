@@ -1,7 +1,7 @@
 from matplotlib import pyplot as plt
 from scipy.interpolate import make_interp_spline, interp1d, PchipInterpolator, CubicSpline
 import numpy as np
-import variables as v
+import variables_early as v
 
 janskys = [0.0655, 0.120, 0.216,
            0.483, 0.591, 0.511,

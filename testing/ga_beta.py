@@ -4,14 +4,14 @@ from matplotlib import pyplot as plt
 
 from conversion import JanskyWavelengths
 import utilities
-import variables
+import variables_early
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import pygad
 import numpy as np
 import pandas as pd
 import scipy.stats as stats
-from variables import names
+from variables_early import names
 
 
 def get_gene_space():

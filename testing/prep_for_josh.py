@@ -1,5 +1,5 @@
 import ga_beta as ga
-import variables as v
+import variables_early as v
 import conversion
 
 outputs_for_josh = [7.58E-14, 8.78E-13, 1.93E-12, 2.20E-09, 8.18E-09, 2.47E-08, 4.26E-08, 5.31E-08, 5.66E-08, 4.67E-08,

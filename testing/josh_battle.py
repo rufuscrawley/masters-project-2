@@ -3,7 +3,7 @@ from scipy.interpolate import CubicSpline
 from scipy.interpolate import make_smoothing_spline
 
 import conversion
-import variables
+import variables_early
 
 josh_janskys = [0.06907, 0.1348, 0.276,
                 0.7187, 0.97, 0.7909,

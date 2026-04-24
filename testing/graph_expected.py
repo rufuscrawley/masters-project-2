@@ -6,7 +6,7 @@ from scipy.interpolate import *
 
 import conversion
 from testing import genetic_algorithm as ga
-import variables
+import variables_early
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 

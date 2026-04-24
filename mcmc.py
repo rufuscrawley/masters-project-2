@@ -9,10 +9,8 @@ warnings.filterwarnings("ignore",
 import numpy as np
 
 import genetic_algorithm as ga
-import utilities
-import variables as v
-import network_variables as nv
-import astropy.units as u
+import variables_early as ve
+import variables_late as vl
 
 # Set up initial variables
 gene_spaces = ga.get_gene_spaces()
@@ -25,13 +23,11 @@ def model(solution_guess, wavelengths):
     :param solution_guess: Parameters being changed by the MCMC fit to find uncertainties.
     :return:
     """
-    flux_guess = nv.predict_fluxes(solution_guess[:-1], True)
-    flux_guess[:v.n_finish] = (flux_guess[:v.n_finish] *
-                               v.extmod.extinguish(v.wavelengths[:v.n_finish]
-                                                   * u.micron,
-                                                   solution_guess[-1]))
+    flux_guess = vl.predict_fluxes(solution_guess[:-1], True)
 
-    flux_guess = utilities.interpolate_fluxes(flux_guess, wavelengths)
+    vl.apply_extinction(flux_guess, solution_guess[-1])
+
+    flux_guess = vl.interpolate_fluxes(flux_guess, wavelengths)
     # Returns 100 fluxes.
     return flux_guess
 
@@ -64,17 +60,16 @@ def log_probability(solution_guess, fluxes, _y, y_err, wavelengths):
     return lp + log_likelihood(solution_guess, fluxes, y_err, wavelengths)
 
 
-def run(parameters, initial_guess, n_steps, n_walkers):
+def run(target, initial_guess, n_steps, n_walkers):
     # Take in the solutions from GA, predict a model from them
-    wavelengths, y_fluxes = parameters
-    expected_model = model(initial_guess, wavelengths)
-    y_fluxes = np.array(y_fluxes)
+    expected_model = model(initial_guess, target.wavelengths)
+    y_fluxes = np.array(target.fluxes)
     # Set up the walker
-    n_dim = v.split + 1
+    n_dim = ve.split + 1
     print(f"Running sampler over {n_dim} dimensions...")
     pos = initial_guess + (1e-3 * np.random.randn(n_walkers, n_dim))
     sampler = emcee.EnsembleSampler(n_walkers, n_dim, log_probability,
-                                    args=(expected_model, y_fluxes, y_fluxes * .1, wavelengths))
+                                    args=(expected_model, y_fluxes, y_fluxes * .1, target.wavelengths))
     sampler.run_mcmc(pos, n_steps, progress=True)
     return sampler
 
@@ -92,7 +87,7 @@ def analyse_run(sampler):
 
     n_samples = []
     for n, inputs in enumerate(samples):
-        s = nv.denormalise(inputs, nv.mean_x[n], nv.std_x[n], nv.logs[n])
+        s = vl.denormalise(inputs, vl.mean_x[n], vl.std_x[n], vl.logs[n])
         n_samples.append(s)
 
     n_samples = np.array(n_samples)
@@ -103,8 +98,8 @@ def analyse_run(sampler):
     n_samples = n_samples.transpose()
 
     labels = []
-    for name in v.names:
-        if name not in v.included:
+    for name in ve.names:
+        if name not in ve.included:
             continue
         else:
             labels.append(name)

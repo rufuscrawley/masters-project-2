@@ -6,9 +6,8 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-import networks
-import variables as v
-from utilities import create_directory
+import keras
+import variables_early as v
 
 norm_con_list = []
 
@@ -89,7 +88,37 @@ def initiate(training_ratio: float, do_keras: bool = False):
         # optimisation.run_keras(x_train, y_train)
     else:
         print("Ignoring Keras!")
-        networks.run_model(x_train, y_train)
+        run_model(x_train, y_train)
     print("Creating test set!")
     test_set = x_test.join(y_test)
     test_set.to_csv(f'datasets/{v.filename}_test.csv', index=False)
+
+
+def run_model(x_train, y_train) -> None:
+    model = keras.Sequential([
+        keras.layers.Input(shape=(v.split,)),
+        keras.layers.Dense(units=64, activation="relu"),
+        keras.layers.Dense(units=64, activation="relu"),
+        keras.layers.Dense(units=100, activation="linear", name="outputs"),
+    ])
+    model.compile(optimizer="adam",
+                  loss="mse",
+                  metrics=["accuracy"])
+    model.fit(x_train, y_train,
+              epochs=50,
+              validation_split=0.2,
+              verbose=1)
+    model.save(f'models/{v.filename}_model.keras')
+    model.summary()
+
+
+def create_directory(folder_name):
+    """
+    Tries to write a folder. If the folder already exists, suppresses the error, and continues.
+    :type folder_name: str
+    :param folder_name: The folder name.
+    """
+    try:
+        os.makedirs(folder_name)
+    except OSError:
+        pass
