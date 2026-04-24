@@ -1,8 +1,6 @@
 import astropy.units as u
 from dust_extinction.parameter_averages import G23
 
-# Normalisation variables for the spreadsheets
-
 names = {"amin1": True,
          "amax1": True,
          "inclinations": False,
@@ -35,25 +33,24 @@ wavelengths = [0.1, 0.11, 0.121, 0.133, 0.147, 0.161,
                341, 375, 412, 454, 499, 549,
                605, 665, 732, 806, 887, 976,
                1070, 1180, 1300]
-# GLOBAL VARIABLES
 filename = "outputs"
 file = f"datasets/{filename}.csv"
 n_file = f'datasets/normalised/n_{filename}.csv'
 const_file = f'datasets/normalised/const_{filename}.csv'
 test_file = f'datasets/{filename}_test.csv'
-included = [
-    "amin1",
-    "amax1",
-    "inclinations",
-    "Temp_sublimation",
-    "router",
-    "height",
-    "betadisc",
-    "alphadisc",
-    "mdisc",
-    "Stellar_radius",
-    "Stellar_temperature",
-]
+included = {
+    "amin1": 0.03,
+    "amax1": 3000,
+    "inclinations": None,
+    "Temp_sublimation": 1_500,
+    "router": None,
+    "height": 10,
+    "betadisc": None,
+    "alphadisc": None,
+    "mdisc": None,
+    "Stellar_radius": 3.0,
+    "Stellar_temperature": 3900,
+}
 split = len(included)
 
 # Set up extinction variables

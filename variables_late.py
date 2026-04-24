@@ -1,7 +1,7 @@
 import warnings
 
 import astropy.units as u
-from scipy.interpolate import CubicSpline, PchipInterpolator
+from scipy.interpolate import PchipInterpolator
 
 # Suppress only UserWarnings from the module
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -82,3 +82,20 @@ def apply_extinction(fluxes, a_v) -> None:
     fluxes[:ve.n_finish] *= ve.extmod.extinguish(ve.wavelengths[:ve.n_finish]
                                                  * u.micron,
                                                  Av=a_v)
+
+
+constraint_arr = []
+for constraint in ve.included:
+    value = ve.included[constraint]
+    if value is not None:
+        index = list(ve.included.keys()).index(constraint)
+        norm = normalise(value, mean_x[index], std_x[index], ve.names[constraint])
+        ve.included[constraint] = norm
+        constraint_arr.append((norm, index))
+
+constraint_arr = np.array(constraint_arr)
+
+constraint_index = constraint_arr[:, 1].astype(int)
+l2_indices = np.setdiff1d(np.arange(len(ve.included)), constraint_index)
+
+unconstrained_indices = np.array(l2_indices).astype(int)

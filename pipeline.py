@@ -122,3 +122,6 @@ def create_directory(folder_name):
         os.makedirs(folder_name)
     except OSError:
         pass
+
+
+initiate(0.2, False)

@@ -16,16 +16,14 @@ from fit_targets import FitObject
 
 def get_gene_spaces():
     # Set up the gene space for our parameters.
-    split_value = 0
     n_csv = pd.read_csv(ve.n_file)
-
     gene_spaces = []
-    for column in n_csv:
-        if split_value == ve.split:
-            break
-        gene_spaces.append({"low": n_csv[column].min() * 1.05,
-                            "high": n_csv[column].max() * 0.95})
-        split_value += 1
+    for variable in ve.included:
+        if ve.included[variable] is not None:
+            gene_spaces.append(ve.included[variable])
+            continue
+        gene_spaces.append({"low": n_csv[variable].min() * 1.05,
+                            "high": n_csv[variable].max() * 0.95})
 
     # Now apply gene space for extinction (our expected final value)
     gene_spaces.append({"low": 0.0,
@@ -85,18 +83,14 @@ def find_solution(target: FitObject, generations, sol_per_pop) -> list:
     def optimisor(_ga_instance, free_parameters, _solution_idx):
         # Suggest a set of free parameters, and then use NN to predict
         # a denormalised set of 100 fluxes.
-        sol_guessed = vl.predict_fluxes(free_parameters[:-1], True)
-
+        flux_guess = vl.predict_fluxes(free_parameters[:-1], True)
         # Apply extinction to the fluxes
-        vl.apply_extinction(sol_guessed, free_parameters[-1])
-
+        vl.apply_extinction(flux_guess, free_parameters[-1])
         # Interpolate the solution over a predetermined number of fluxes.
-        sol_interp = vl.interpolate_fluxes(sol_guessed, target.wavelengths)
-
-        sol_interp = np.log10(sol_interp)
-        l_fluxes = np.log10(target.fluxes)
-
-        mse = chisquare(sol_interp, l_fluxes, sum_check=False).statistic
+        flux_guess = vl.interpolate_fluxes(flux_guess, target.wavelengths)
+        flux_obs = np.log10(flux_guess)
+        flux_exp = np.log10(target.fluxes)
+        mse = chisquare(flux_obs, flux_exp, sum_check=False).statistic
         return mse
 
     def on_generation(ga_instance):

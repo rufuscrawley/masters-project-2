@@ -2,42 +2,60 @@ import warnings
 
 import corner
 import emcee
+import pandas as pd
+
+from fit_targets import FitObject
 
 warnings.filterwarnings("ignore",
                         category=FutureWarning,
                         module="arviz")
 import numpy as np
 
-import genetic_algorithm as ga
 import variables_early as ve
 import variables_late as vl
 
+
+def get_gene_spaces():
+    # Set up the gene space for our parameters.
+    n_csv = pd.read_csv(ve.n_file)
+    arr_gs = []
+    for variable in ve.included:
+        if ve.included[variable] is not None:
+            continue
+        arr_gs.append({"low": n_csv[variable].min() * 1.05,
+                       "high": n_csv[variable].max() * 0.95})
+    # Now apply gene space for extinction (our expected final value)
+    arr_gs.append({"low": 0.0,
+                   "high": 3.0})
+    return arr_gs
+
+
 # Set up initial variables
-gene_spaces = ga.get_gene_spaces()
+gene_spaces = get_gene_spaces()
 
 
-def model(solution_guess, wavelengths):
+def model(solution_guess, sol_con, wavelengths):
     """
     Idealistic fit to compare against.
+    :param sol_con:
     :param wavelengths:
     :param solution_guess: Parameters being changed by the MCMC fit to find uncertainties.
     :return:
     """
-    flux_guess = vl.predict_fluxes(solution_guess[:-1], True)
 
+    sol_con[vl.unconstrained_indices] = solution_guess[:-1]
+    sol_con[-1] = solution_guess[-1]
+    flux_guess = vl.predict_fluxes(sol_con[:-1], True)
     vl.apply_extinction(flux_guess, solution_guess[-1])
-
-    flux_guess = vl.interpolate_fluxes(flux_guess, wavelengths)
-    # Returns 100 fluxes.
-    return flux_guess
+    return vl.interpolate_fluxes(flux_guess, wavelengths)
 
 
-def log_likelihood(solution_guess, fluxes, y_err, wavelengths):
+def log_likelihood(solution_guess, fluxes, y_err, wavelengths, sol_con):
     """
     Calculate how well our parameters fit the data.
     :return:
     """
-    y_model = model(solution_guess, wavelengths)
+    y_model = model(solution_guess, sol_con, wavelengths)
     if not np.all(np.isfinite(y_model)):
         return -np.inf
     return -0.5 * np.sum(((fluxes - y_model) / y_err) ** 2)
@@ -53,23 +71,35 @@ def log_prior(solution_guess):
     return 0.0
 
 
-def log_probability(solution_guess, fluxes, _y, y_err, wavelengths):
+def log_probability(solution_guess, fluxes, _y, y_err, wavelengths, sol_con):
     lp = log_prior(solution_guess)
     if not np.isfinite(lp):
         return -np.inf
-    return lp + log_likelihood(solution_guess, fluxes, y_err, wavelengths)
+    return lp + log_likelihood(solution_guess, fluxes, y_err, wavelengths, sol_con)
 
 
-def run(target, initial_guess, n_steps, n_walkers):
-    # Take in the solutions from GA, predict a model from them
-    expected_model = model(initial_guess, target.wavelengths)
-    y_fluxes = np.array(target.fluxes)
+def run(target: FitObject, initial_guess, n_steps, n_walkers):
+    # Set up 0 array with length equivalent to guess
+    constrain_arr = np.zeros(len(initial_guess))
+    # Fill this 0 array with constrained values from initial guess
+    constrain_arr[vl.constraint_index] = initial_guess[vl.constraint_index]
+
+    # Construct "guess" array of guess + extinction
+    initial_guess = np.concatenate((initial_guess[vl.unconstrained_indices],
+                                    initial_guess[-1:]))
+
+    expected_model = model(initial_guess, constrain_arr, target.wavelengths)
+
     # Set up the walker
-    n_dim = ve.split + 1
+    n_dim = ve.split + 1 - len(vl.constraint_arr)
     print(f"Running sampler over {n_dim} dimensions...")
-    pos = initial_guess + (1e-3 * np.random.randn(n_walkers, n_dim))
+
+    pos = initial_guess[initial_guess != 0.0] + (1e-3 * np.random.randn(n_walkers, n_dim))
+
     sampler = emcee.EnsembleSampler(n_walkers, n_dim, log_probability,
-                                    args=(expected_model, y_fluxes, y_fluxes * .1, target.wavelengths))
+                                    args=(expected_model, target.fluxes,
+                                          target.flux_err, target.wavelengths,
+                                          constrain_arr))
     sampler.run_mcmc(pos, n_steps, progress=True)
     return sampler
 
@@ -100,6 +130,8 @@ def analyse_run(sampler):
     labels = []
     for name in ve.names:
         if name not in ve.included:
+            continue
+        if ve.included[name] is not None:
             continue
         else:
             labels.append(name)
