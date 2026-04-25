@@ -42,13 +42,13 @@ included = {
     "amin1": 0.03,
     "amax1": 3000,
     "inclinations": None,
-    "Temp_sublimation": 1_500,
+    "Temp_sublimation": None,
     "router": None,
     "height": 10,
     "betadisc": None,
     "alphadisc": None,
     "mdisc": None,
-    "Stellar_radius": 3.0,
+    "Stellar_radius": 3,
     "Stellar_temperature": 3900,
 }
 split = len(included)
@@ -56,7 +56,7 @@ split = len(included)
 # Set up extinction variables
 extmod = G23(Rv=3.1)
 for n, wavelength in enumerate(wavelengths):
-    if wavelength >= 32.0:
+    if wavelength > 32.0:
         n_finish = n
         break
     else:

@@ -35,7 +35,7 @@ def get_gene_spaces():
 def run(target: FitObject, generations=5, sol_per_pop=1000):
     # Run these fluxes through the neural network.
     # Note that these do not need to be normalised - we will denormalise the NN output instead.
-    best_solution = find_solution(target, generations, sol_per_pop)
+    best_solution, fitness = find_solution(target, generations, sol_per_pop)
     print("Found solution, plotting SED...")
 
     best_fluxes = vl.predict_fluxes(best_solution[:-1], True)
@@ -45,13 +45,13 @@ def run(target: FitObject, generations=5, sol_per_pop=1000):
     plt.plot(ve.wavelengths, best_fluxes, label=f"NN (predicted) (Ext = {best_solution[-1]})")
     plt.scatter(target.wavelengths, target.fluxes, label="Fluxes (raw)", linewidths=.1)
     plt.errorbar(target.wavelengths, target.fluxes, yerr=target.flux_err, fmt='none')
-    plt.title(f"Observed SED of {target.name}")
+    plt.title(f"Observed SED of {target.name} (u = {np.round(fitness, 4)})")
     plt.xlabel("Wavelength (Microns)")
     plt.ylabel("Flux (erg / s / cm^2)")
     plt.xscale("log")
     plt.yscale("log")
     plt.legend()
-    plt.ylim(10e-15, None)
+    plt.ylim(np.min(target.fluxes) / 10, None)
     plt.show()
 
     # Alternately, test the others
@@ -65,10 +65,7 @@ def run(target: FitObject, generations=5, sol_per_pop=1000):
     plt.yscale("log")
     plt.legend()
     plt.ylim(10e-15, None)
-
-    plt.show()
-
-    plt.show()
+    # plt.show()
 
     return best_solution
 
@@ -88,15 +85,15 @@ def find_solution(target: FitObject, generations, sol_per_pop) -> list:
         vl.apply_extinction(flux_guess, free_parameters[-1])
         # Interpolate the solution over a predetermined number of fluxes.
         flux_guess = vl.interpolate_fluxes(flux_guess, target.wavelengths)
-        flux_obs = np.log10(flux_guess)
-        flux_exp = np.log10(target.fluxes)
+        flux_obs = -1 * np.log10(flux_guess)
+        flux_exp = -1 * np.log10(target.fluxes)
         mse = chisquare(flux_obs, flux_exp, sum_check=False).statistic
-        return mse
+        return -1 * mse
 
     def on_generation(ga_instance):
         generation_num = ga_instance.generations_completed
         best_fitness = ga_instance.best_solutions_fitness if ga_instance.best_solutions_fitness else 0
-        print(f"Generation {generation_num} finished. Best Fitness: {-1 * best_fitness[-1]} ")
+        print(f"Generation {generation_num} finished. Best Fitness: {best_fitness[-1]} ")
 
     # Set up a PyGad instance to apply our chi optimisor to.
     ga = pygad.GA(num_generations=generations,
@@ -105,16 +102,17 @@ def find_solution(target: FitObject, generations, sol_per_pop) -> list:
                   sol_per_pop=sol_per_pop,
                   gene_space=get_gene_spaces(),
                   num_genes=(ve.split + 1),
-                  init_range_low=0.25,
-                  init_range_high=0.75,
+                  init_range_low=0.0,
+                  init_range_high=1.0,
                   parent_selection_type="random",
                   keep_parents=int(sol_per_pop / 40),
                   crossover_type="single_point",
                   mutation_type="random",
                   mutation_percent_genes=33,
                   on_generation=on_generation)
+    print("Running PyGad...")
     ga.run()
     ga.plot_fitness()
     sol, sol_fitness, sol_idx = ga.best_solution()
     print(f"fitness: {sol_fitness}")
-    return sol
+    return sol, sol_fitness

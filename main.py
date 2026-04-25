@@ -1,5 +1,3 @@
-# Central file to collate all relevant functions
-
 import fit_targets as ft
 import genetic_algorithm as ga
 import mcmc
@@ -18,7 +16,7 @@ else:
 
 # Sets up the neural network
 
-best_solution = ga.run(target, 10, 200)
+best_solution = ga.run(target, 100, 500)
 if not args.nomc:
-    samples = mcmc.run(target, best_solution, 1_500, 25)
+    samples = mcmc.run(target, best_solution, 100, 20)
     mcmc.analyse_run(samples)

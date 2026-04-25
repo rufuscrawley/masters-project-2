@@ -83,10 +83,13 @@ def run(target: FitObject, initial_guess, n_steps, n_walkers):
     constrain_arr = np.zeros(len(initial_guess))
     # Fill this 0 array with constrained values from initial guess
     constrain_arr[vl.constraint_index] = initial_guess[vl.constraint_index]
-
+    print(f"Initial MCMC w/ constraints: {constrain_arr}")
     # Construct "guess" array of guess + extinction
+
     initial_guess = np.concatenate((initial_guess[vl.unconstrained_indices],
                                     initial_guess[-1:]))
+
+    print(f"Final initial guess: {initial_guess}")
 
     expected_model = model(initial_guess, constrain_arr, target.wavelengths)
 
@@ -114,20 +117,16 @@ def analyse_run(sampler):
 
     samples, extinctions = samples[:, :-1], samples[:, -1]
     samples = samples.transpose()
-
     n_samples = []
     for n, inputs in enumerate(samples):
-        s = vl.denormalise(inputs, vl.mean_x[n], vl.std_x[n], vl.logs[n])
+        idx = vl.unconstrained_indices[n]
+        s = vl.denormalise(inputs, vl.mean_x[idx], vl.std_x[idx], vl.logs[idx])
         n_samples.append(s)
-
-    n_samples = np.array(n_samples)
-
-    n_samples = list(n_samples)
     n_samples.append(extinctions)
     n_samples = np.array(n_samples)
     n_samples = n_samples.transpose()
 
-    labels = []
+    labels, axes_scale = [], []
     for name in ve.names:
         if name not in ve.included:
             continue
@@ -135,12 +134,16 @@ def analyse_run(sampler):
             continue
         else:
             labels.append(name)
+            if ve.names[name]:
+                axes_scale.append("log")
+            else:
+                axes_scale.append("linear")
     labels.append("jevans")
+    axes_scale.append("linear")
     fig = corner.corner(n_samples,
                         quantiles=[0.16, 0.5, 0.84],
-                        labels=labels,
                         show_titles=True,
-                        title_fmt=".2e",
+                        labels=labels,
+                        axes_scale=axes_scale,
                         smooth=1)
-    ##TODO - dynamic axis scaling
     fig.show()
