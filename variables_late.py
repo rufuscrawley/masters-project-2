@@ -1,7 +1,7 @@
 import warnings
 
 import astropy.units as u
-from scipy.interpolate import PchipInterpolator
+from scipy.interpolate import PchipInterpolator, CubicSpline
 
 # Suppress only UserWarnings from the module
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -71,7 +71,7 @@ def interpolate_fluxes(fluxes, wavelengths) -> np.ndarray:
     :param wavelengths:
     :return:
     """
-    spline = PchipInterpolator(ve.wavelengths, fluxes, extrapolate=False)
+    spline = CubicSpline(ve.wavelengths, fluxes, extrapolate=False)
     true_spline = spline(wavelengths)
 
     true_spline = np.clip(true_spline, 1e-24, None)

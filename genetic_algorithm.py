@@ -22,11 +22,11 @@ def get_gene_spaces():
         if ve.included[variable] is not None:
             gene_spaces.append(ve.included[variable])
             continue
-        gene_spaces.append({"low": n_csv[variable].min() * 1.05,
-                            "high": n_csv[variable].max() * 0.95})
+        gene_spaces.append({"low": n_csv[variable].min() * 1.01,
+                            "high": n_csv[variable].max() * 0.99})
 
     # Now apply gene space for extinction (our expected final value)
-    gene_spaces.append({"low": 0.0,
+    gene_spaces.append({"low": -3.0,
                         "high": 3.0})
 
     return gene_spaces
@@ -42,16 +42,21 @@ def run(target: FitObject, generations=5, sol_per_pop=1000):
     vl.apply_extinction(best_fluxes, best_solution[-1])
 
     # Lastly, plot the interpolated input values
-    plt.plot(ve.wavelengths, best_fluxes, label=f"NN (predicted) (Ext = {best_solution[-1]})")
-    plt.scatter(target.wavelengths, target.fluxes, label="Fluxes (raw)", linewidths=.1)
-    plt.errorbar(target.wavelengths, target.fluxes, yerr=target.flux_err, fmt='none')
-    plt.title(f"Observed SED of {target.name} (u = {np.round(fitness, 4)})")
+    plt.plot(ve.wavelengths, best_fluxes,
+             label=f"NN (predicted)", color="k")
+    plt.scatter(target.wavelengths, target.fluxes,
+                label="Fluxes (raw)", marker="x")
+    plt.errorbar(target.wavelengths, target.fluxes,
+                 yerr=target.flux_err, fmt='none')
+    plt.title(f"Observed SED of {target.name} (χ ~ {-1 * np.round(fitness, 4)})")
     plt.xlabel("Wavelength (Microns)")
     plt.ylabel("Flux (erg / s / cm^2)")
     plt.xscale("log")
     plt.yscale("log")
     plt.legend()
-    plt.ylim(np.min(target.fluxes) / 10, None)
+    plt.xlim(np.min(target.wavelengths) / 2, np.max(target.wavelengths) * 2)
+    plt.ylim(np.min(target.fluxes) / 2, np.max(target.fluxes) * 2)
+    plt.tight_layout()
     plt.show()
 
     # Alternately, test the others
@@ -97,15 +102,15 @@ def find_solution(target: FitObject, generations, sol_per_pop) -> list:
 
     # Set up a PyGad instance to apply our chi optimisor to.
     ga = pygad.GA(num_generations=generations,
-                  num_parents_mating=int(sol_per_pop / 10),
+                  num_parents_mating=int(sol_per_pop / 4),
                   fitness_func=optimisor,
                   sol_per_pop=sol_per_pop,
                   gene_space=get_gene_spaces(),
                   num_genes=(ve.split + 1),
-                  init_range_low=0.0,
+                  init_range_low=-1.0,
                   init_range_high=1.0,
                   parent_selection_type="random",
-                  keep_parents=int(sol_per_pop / 40),
+                  keep_parents=int(sol_per_pop / 8),
                   crossover_type="single_point",
                   mutation_type="random",
                   mutation_percent_genes=33,

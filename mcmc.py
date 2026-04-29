@@ -22,10 +22,10 @@ def get_gene_spaces():
     for variable in ve.included:
         if ve.included[variable] is not None:
             continue
-        arr_gs.append({"low": n_csv[variable].min() * 1.05,
-                       "high": n_csv[variable].max() * 0.95})
+        arr_gs.append({"low": n_csv[variable].min() * 1.01,
+                       "high": n_csv[variable].max() * 0.99})
     # Now apply gene space for extinction (our expected final value)
-    arr_gs.append({"low": 0.0,
+    arr_gs.append({"low": -3.0,
                    "high": 3.0})
     return arr_gs
 
@@ -96,13 +96,17 @@ def run(target: FitObject, initial_guess, n_steps, n_walkers):
     # Set up the walker
     n_dim = ve.split + 1 - len(vl.constraint_arr)
     print(f"Running sampler over {n_dim} dimensions...")
+    filename = "MCMC.h5"
+    backend = emcee.backends.HDFBackend(filename)
+    backend.reset(n_walkers, n_dim)
 
     pos = initial_guess[initial_guess != 0.0] + (1e-3 * np.random.randn(n_walkers, n_dim))
 
     sampler = emcee.EnsembleSampler(n_walkers, n_dim, log_probability,
                                     args=(expected_model, target.fluxes,
                                           target.flux_err, target.wavelengths,
-                                          constrain_arr))
+                                          constrain_arr),
+                                    backend=backend)
     sampler.run_mcmc(pos, n_steps, progress=True)
     return sampler
 
@@ -138,11 +142,12 @@ def analyse_run(sampler):
                 axes_scale.append("log")
             else:
                 axes_scale.append("linear")
-    labels.append("jevans")
+    labels.append("extinction")
     axes_scale.append("linear")
     fig = corner.corner(n_samples,
                         quantiles=[0.16, 0.5, 0.84],
                         show_titles=True,
+                        title_fmt=".2e",
                         labels=labels,
                         axes_scale=axes_scale,
                         smooth=1)

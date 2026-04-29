@@ -38,19 +38,24 @@ file = f"datasets/{filename}.csv"
 n_file = f'datasets/normalised/n_{filename}.csv'
 const_file = f'datasets/normalised/const_{filename}.csv'
 test_file = f'datasets/{filename}_test.csv'
+# FT Tau = 1.7, 3400
+# DR Tau = 1.46, 4100
+# IM Lupi = 3.0, 3900
+
 included = {
-    "amin1": 0.03,
-    "amax1": 3000,
+    "amin1": None,
+    "amax1": None,
     "inclinations": None,
-    "Temp_sublimation": None,
+    "Temp_sublimation": 1_500,
     "router": None,
-    "height": 10,
+    "height": None,
     "betadisc": None,
     "alphadisc": None,
     "mdisc": None,
-    "Stellar_radius": 3,
-    "Stellar_temperature": 3900,
+    "Stellar_radius": 1.46,
+    "Stellar_temperature": 4100,
 }
+
 split = len(included)
 
 # Set up extinction variables
