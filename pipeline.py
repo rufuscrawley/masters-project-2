@@ -100,23 +100,24 @@ def initiate(training_ratio: float, do_keras: bool = False):
 def run_model(x_train, y_train) -> None:
     model: keras.Model = keras.Sequential([
         keras.layers.Input(shape=(v.split,)),
-        keras.layers.Dense(units=64, activation="relu"),
-        keras.layers.Dense(units=64, activation="relu"),
+        keras.layers.Dense(units=50, activation="relu"),
+        keras.layers.Dense(units=70, activation="relu"),
+        keras.layers.Dense(units=20, activation="relu"),
         keras.layers.Dense(units=100, activation="linear", name="outputs"),
     ])
-    model.compile(optimizer="adam",
+    model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.0015275),
                   loss="mse",
                   metrics=["accuracy"])
     history = model.fit(x_train, y_train,
-                        epochs=10,
+                        epochs=100,
                         validation_split=0.2,
                         verbose=1)
     plt.plot(history.history['loss'])
     plt.plot(history.history['val_loss'])
-    plt.title('model loss')
-    plt.ylabel('loss')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'test'], loc='upper left')
+    plt.title('Model loss over training')
+    plt.ylabel('Loss (MSE)')
+    plt.xlabel('Epoch count')
+    plt.legend(['Training data', 'Testing data'], loc='upper left')
     plt.show()
     model.save(f'models/{v.filename}_model.keras')
     model.summary()
@@ -127,13 +128,13 @@ def run_keras(x_train, y_train) -> None:
         model = keras.Sequential()
         model.add(keras.layers.Input(shape=(v.split,)))
         # Tune the number of layers.
-        activation = hp.Choice(f"activation_h", ["relu", "tanh"])
-        for i in range(1):
+        n_units = hp.Int("n_units", min_value=1, max_value=4, step=1)
+        for i in range(n_units):
             model.add(
                 keras.layers.Dense(
                     # Tune number of units separately.
-                    units=hp.Int(f"units_{i + 1}", min_value=v.split, max_value=(v.split * 10), step=v.split),
-                    activation=activation
+                    units=hp.Int(f"units_{i + 1}", min_value=10, max_value=80, step=10),
+                    activation="relu"
                 )
             )
         model.add(keras.layers.Dense(100, activation="linear"))
@@ -141,15 +142,14 @@ def run_keras(x_train, y_train) -> None:
         model.compile(optimizer=keras.optimizers.Adam(learning_rate=learning_rate), loss="mse")
         return model
 
-    tuner = keras_tuner.RandomSearch(
+    tuner = keras_tuner.BayesianOptimization(
         hypermodel=build_model,
         objective="val_loss",
-        max_trials=1000,
-        executions_per_trial=1,
+        max_trials=2000
     )
 
     tuner.search(x_train, y_train,
-                 epochs=10, validation_split=0.2)
+                 epochs=20, validation_split=0.2)
 
 
 def create_directory(folder_name):

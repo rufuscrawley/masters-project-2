@@ -9,7 +9,8 @@ parser.add_argument("--nomc",
                     help="ignore mcmc",
                     action="store_true")
 args = parser.parse_args()
-target = ft.DRTau
+target = ft.FTTau
+
 if args.nomc:
     print("Here we go again...")
 else:
@@ -18,7 +19,7 @@ else:
 # Sets up the neural network
 
 
-best_solution = ga.run(target, 2_500, 25)
+best_solution = ga.run(target, 2500, 50)
 if not args.nomc:
-    samples = mcmc.run(target, best_solution, 2_000, 50)
+    samples = mcmc.run(target, best_solution, 3_500, 75)
     mcmc.analyse_run(samples)

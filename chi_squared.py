@@ -29,12 +29,13 @@ def plot_residues():
         results = nv.predict_fluxes(x_row, True)
 
         residues = (np.log10(y_row) - np.log10(results)) / np.log10(y_row)
-        if any(map((-.07).__gt__, residues)) or any(map(.07.__lt__, residues)):
+
+        if any(map((-.04).__gt__, residues)) or any(map(.04.__lt__, residues)):
             skips += 1
         else:
             residue_list.append(residues)
 
-    residue_list = np.array(residue_list).transpose()
+    residue_list = (np.array(residue_list) * 100).transpose()
 
     means = np.mean(residue_list, axis=1)
     std = np.std(residue_list, axis=1)
@@ -44,17 +45,31 @@ def plot_residues():
 
     plt.hist2d(wavelengths, residue_list,
                bins=100, norm=LogNorm(),
-               density=False, cmin=5)
-    plt.plot(v.wavelengths, means, color="k", label="mean")
-    plt.plot(v.wavelengths, (means + std), color="orange", label="1sig")
-    plt.plot(v.wavelengths, (means - std), color="orange")
-    plt.plot(v.wavelengths, (means + (2 * std)), color="r", label="2sig")
-    plt.plot(v.wavelengths, (means - (2 * std)), color="r")
+               density=False, cmin=8)
+    plt.plot(v.wavelengths, means, color="k", label="$\mu$")
+    plt.plot(v.wavelengths, (means + std), color="orange", label="1$\sigma$", linestyle="dashed")
+    plt.plot(v.wavelengths, (means - std), color="orange", linestyle="dashed")
+    plt.plot(v.wavelengths, (means + (2 * std)), color="r", label="2$\sigma$", linestyle="dashed")
+    plt.plot(v.wavelengths, (means - (2 * std)), color="r", linestyle="dashed")
     plt.title("NN Residuals against test dataset")
-    plt.xlabel("Wavelengths (um)")
+    plt.xlabel("Wavelength ($\mu$m)")
     plt.ylabel("Relative residual (%)")
     plt.tight_layout()
     plt.grid()
+    plt.legend()
+    plt.show()
+
+    plt.plot(v.wavelengths, means, color="k", label="$\mu$")
+    plt.plot(v.wavelengths, (means + std), color="orange", label="1$\sigma$", linestyle="dashed")
+    plt.plot(v.wavelengths, (means - std), color="orange", linestyle="dashed")
+    plt.plot(v.wavelengths, (means + (2 * std)), color="r", label="2$\sigma$", linestyle="dashed")
+    plt.plot(v.wavelengths, (means - (2 * std)), color="r", linestyle="dashed")
+    plt.title("NN Means/StDev against test dataset")
+    plt.xlabel("Wavelength ($\mu$m)")
+    plt.ylabel("Relative residual (%)")
+    plt.tight_layout()
+    plt.grid()
+    plt.xscale("log")
     plt.legend()
     plt.show()
 
@@ -63,7 +78,9 @@ def plot_comparisons():
     x, y = data.iloc[:, :v.split], data.iloc[:, v.split:]
 
     fig, axs = plt.subplots(3, 3)
-    fig.suptitle("Example SED fits")
+    fig.suptitle("Example SED fits against training data set")
+    fig.supxlabel("Wavelength ($\mu$m)")
+    fig.supylabel("$\lambda$F (erg / s / cm$^2$)")
     for i in range(3):
         for j in range(3):
             # Gather training data
@@ -81,4 +98,4 @@ def plot_comparisons():
 
 
 plot_comparisons()
-# plot_residues()
+plot_residues()

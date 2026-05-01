@@ -96,5 +96,4 @@ for constraint in ve.included:
 constraint_arr = np.array(constraint_arr)
 constraint_index = constraint_arr[:, 1].astype(int)
 l2_indices = np.setdiff1d(np.arange(len(ve.included)), constraint_index)
-unconstrained_indices = np.array(l2_indices).astype(int)
-print(f"Constraining {constraint_index}, not doing {unconstrained_indices}")
+unconstrained_indices = np.array(l2_indices).astype(int)#

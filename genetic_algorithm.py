@@ -10,7 +10,6 @@ import numpy as np
 import pygad
 import variables_early as ve
 import variables_late as vl
-
 from fit_targets import FitObject
 
 
@@ -48,9 +47,9 @@ def run(target: FitObject, generations=5, sol_per_pop=1000):
                 label="Fluxes (raw)", marker="x")
     plt.errorbar(target.wavelengths, target.fluxes,
                  yerr=target.flux_err, fmt='none')
-    plt.title(f"Observed SED of {target.name} (χ ~ {-1 * np.round(fitness, 4)})")
-    plt.xlabel("Wavelength (Microns)")
-    plt.ylabel("Flux (erg / s / cm^2)")
+    plt.title(f"Observed SED of {target.name} ($\chi^2$ ~ {-1 * np.round(fitness, 4)})")
+    plt.xlabel("Wavelength ($\mu$m)")
+    plt.ylabel("$\lambda$F (erg / s / cm$^2$)")
     plt.xscale("log")
     plt.yscale("log")
     plt.legend()
@@ -60,17 +59,29 @@ def run(target: FitObject, generations=5, sol_per_pop=1000):
     plt.show()
 
     # Alternately, test the others
+    fig, axs = plt.subplots(2, 1)
     sol_interp = vl.interpolate_fluxes(best_fluxes, target.wavelengths)
-    plt.scatter(target.wavelengths, sol_interp, linewidths=.05, label="Predicted")
-    plt.scatter(target.wavelengths, target.fluxes, linewidths=.05, label="Expected")
-    plt.title(f"Interpolated SED of {target.name}")
-    plt.xlabel("Wavelength (Microns)")
-    plt.ylabel("Flux (erg / s / cm^2)")
-    plt.xscale("log")
-    plt.yscale("log")
+    fig.suptitle(f"Interpolated SED of {target.name}")
+
+    axs[0].scatter(target.wavelengths, sol_interp, label="Predicted flux", color="k", marker="x")
+    axs[0].scatter(target.wavelengths, target.fluxes, label="Expected flux", marker="x")
+    axs[0].set_ylabel("$\lambda$F (erg / s / cm$^2$)")
+    axs[0].set_xscale("log")
+    axs[0].set_yscale("log")
+    axs[0].legend()
+
+    deviations = (np.log10(target.fluxes) - np.log10(sol_interp)) * 100 / np.log10(target.fluxes)
+    axs[1].plot(target.wavelengths, deviations,
+                label=f"Predicted flux ($\mu$ = {np.round(np.mean(deviations), 3)})",
+                color="k")
+    axs[1].axhline(0.0)
+    axs[1].set_ylabel("% deviation from expected F")
+    axs[1].set_xscale("log")
+
+    plt.xlabel("Wavelength ($\mu$m)")
     plt.legend()
-    plt.ylim(10e-15, None)
-    # plt.show()
+    plt.tight_layout()
+    plt.show()
 
     return best_solution
 
@@ -81,24 +92,27 @@ def find_solution(target: FitObject, generations, sol_per_pop) -> list:
     :return: An array of normalised values that best fit the chi-squared solution.
     """
 
+    ddof = len(ve.wavelengths) - (len(ve.included) - 1)
+    flux_exp = np.log10(target.fluxes)
+    err = target.flux_err / (target.fluxes * np.log(10))
+
     # Define our optimisation function to use with the genetic algorithm.
     def optimisor(_ga_instance, free_parameters, _solution_idx):
         # Suggest a set of free parameters, and then use NN to predict
-        # a denormalised set of 100 fluxes.
+        # a denormalised set of 100 fluxes
         flux_guess = vl.predict_fluxes(free_parameters[:-1], True)
         # Apply extinction to the fluxes
         vl.apply_extinction(flux_guess, free_parameters[-1])
-        # Interpolate the solution over a predetermined number of fluxes.
-        flux_guess = vl.interpolate_fluxes(flux_guess, target.wavelengths)
-        flux_obs = -1 * np.log10(flux_guess)
-        flux_exp = -1 * np.log10(target.fluxes)
-        mse = chisquare(flux_obs, flux_exp, sum_check=False).statistic
-        return -1 * mse
+        # Interpolate the solution over a predetermined number of fluxes
+        flux_interp = vl.interpolate_fluxes(flux_guess, target.wavelengths)
+        flux_obs = np.log10(flux_interp)
+        mse = chisquare(flux_obs / err, flux_exp / err, sum_check=False, ddof=ddof).statistic
+        return mse
 
     def on_generation(ga_instance):
         generation_num = ga_instance.generations_completed
         best_fitness = ga_instance.best_solutions_fitness if ga_instance.best_solutions_fitness else 0
-        print(f"Generation {generation_num} finished. Best Fitness: {best_fitness[-1]} ")
+        print(f"({generation_num} / {generations}) - {-1 * best_fitness[-1]}")
 
     # Set up a PyGad instance to apply our chi optimisor to.
     ga = pygad.GA(num_generations=generations,
@@ -119,5 +133,5 @@ def find_solution(target: FitObject, generations, sol_per_pop) -> list:
     ga.run()
     ga.plot_fitness()
     sol, sol_fitness, sol_idx = ga.best_solution()
-    print(f"fitness: {sol_fitness}")
+    print(f"Final chi-squared: {-1 * sol_fitness}")
     return sol, sol_fitness

@@ -38,22 +38,24 @@ file = f"datasets/{filename}.csv"
 n_file = f'datasets/normalised/n_{filename}.csv'
 const_file = f'datasets/normalised/const_{filename}.csv'
 test_file = f'datasets/{filename}_test.csv'
-# FT Tau = 1.7, 3400
-# DR Tau = 1.46, 4100
-# IM Lupi = 3.0, 3900
+
+ft_tau = 1.7, 3400
+dr_tau = 1.46, 4100
+im_lupi = 3.0, 3900
+use_these = ft_tau
 
 included = {
     "amin1": None,
     "amax1": None,
     "inclinations": None,
-    "Temp_sublimation": 1_500,
+    "Temp_sublimation": None,
     "router": None,
     "height": None,
     "betadisc": None,
     "alphadisc": None,
     "mdisc": None,
-    "Stellar_radius": 1.46,
-    "Stellar_temperature": 4100,
+    "Stellar_radius": use_these[0],
+    "Stellar_temperature": use_these[1],
 }
 
 split = len(included)
