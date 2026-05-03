@@ -21,12 +21,12 @@ def get_gene_spaces():
         if ve.included[variable] is not None:
             gene_spaces.append(ve.included[variable])
             continue
-        gene_spaces.append({"low": n_csv[variable].min() * 1.01,
-                            "high": n_csv[variable].max() * 0.99})
+        gene_spaces.append({"low": n_csv[variable].min(),
+                            "high": n_csv[variable].max()})
 
     # Now apply gene space for extinction (our expected final value)
-    gene_spaces.append({"low": -3.0,
-                        "high": 3.0})
+    gene_spaces.append({"low": -5.0,
+                        "high": 5.0})
 
     return gene_spaces
 
@@ -38,9 +38,14 @@ def run(target: FitObject, generations=5, sol_per_pop=1000):
     print("Found solution, plotting SED...")
 
     best_fluxes = vl.predict_fluxes(best_solution[:-1], True)
+    e_3 = best_fluxes.copy()
+    e_4 = best_fluxes.copy()
     vl.apply_extinction(best_fluxes, best_solution[-1])
+    vl.apply_extinction(e_3, best_solution[-1] + 1.5)
+    vl.apply_extinction(e_4, best_solution[-1] + 3)
 
-    # Lastly, plot the interpolated input values
+    plt.plot(ve.wavelengths, e_3, alpha=0.2)
+    plt.plot(ve.wavelengths, e_4, alpha=0.2)
     plt.plot(ve.wavelengths, best_fluxes,
              label=f"NN (predicted)", color="k")
     plt.scatter(target.wavelengths, target.fluxes,
@@ -64,18 +69,20 @@ def run(target: FitObject, generations=5, sol_per_pop=1000):
     fig.suptitle(f"Interpolated SED of {target.name}")
 
     axs[0].scatter(target.wavelengths, sol_interp, label="Predicted flux", color="k", marker="x")
-    axs[0].scatter(target.wavelengths, target.fluxes, label="Expected flux", marker="x")
+    axs[0].scatter(target.wavelengths, target.fluxes, label="Expected flux", marker="+")
     axs[0].set_ylabel("$\lambda$F (erg / s / cm$^2$)")
     axs[0].set_xscale("log")
     axs[0].set_yscale("log")
     axs[0].legend()
 
-    deviations = (np.log10(target.fluxes) - np.log10(sol_interp)) * 100 / np.log10(target.fluxes)
-    axs[1].plot(target.wavelengths, deviations,
-                label=f"Predicted flux ($\mu$ = {np.round(np.mean(deviations), 3)})",
-                color="k")
+    deviations = -1 * (np.log10(target.fluxes) - np.log10(sol_interp))
+    axs[1].scatter(target.wavelengths, deviations,
+                   label=f"Predicted flux",
+                   color="k", marker="x")
+    print(f"mean = {np.round(np.mean(deviations), 3)}")
+    print(f"std = {np.round(np.std(deviations), 3)}")
     axs[1].axhline(0.0)
-    axs[1].set_ylabel("% deviation from expected F")
+    axs[1].set_ylabel("Log deviation from expected F")
     axs[1].set_xscale("log")
 
     plt.xlabel("Wavelength ($\mu$m)")
@@ -133,5 +140,5 @@ def find_solution(target: FitObject, generations, sol_per_pop) -> list:
     ga.run()
     ga.plot_fitness()
     sol, sol_fitness, sol_idx = ga.best_solution()
-    print(f"Final chi-squared: {-1 * sol_fitness}")
+    print(f"Final chi-squared: {-1 * sol_fitness} (A_v = {sol[-1]})")
     return sol, sol_fitness

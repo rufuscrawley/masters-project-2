@@ -100,13 +100,12 @@ def initiate(training_ratio: float, do_keras: bool = False):
 def run_model(x_train, y_train) -> None:
     model: keras.Model = keras.Sequential([
         keras.layers.Input(shape=(v.split,)),
-        keras.layers.Dense(units=50, activation="relu"),
-        keras.layers.Dense(units=70, activation="relu"),
-        keras.layers.Dense(units=20, activation="relu"),
+        keras.layers.Dense(units=64, activation="relu"),
+        keras.layers.Dense(units=64, activation="relu"),
         keras.layers.Dense(units=100, activation="linear", name="outputs"),
     ])
     model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.0015275),
-                  loss="mse",
+                  loss="mae",
                   metrics=["accuracy"])
     history = model.fit(x_train, y_train,
                         epochs=100,

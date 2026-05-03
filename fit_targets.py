@@ -21,7 +21,7 @@ class FitObject(object):
         self.fluxes = self.distance_scale(flux_u)
         self.flux_err = self.distance_scale(flux_err_u)
 
-        # self.flux_err += self.fluxes / 25
+        self.flux_err += self.fluxes / 20
 
     def convert_to_jy(self, fluxes):
         flux_u = (fluxes * u.Jy).to(u.erg / u.cm ** 2 / u.s / u.Hz)

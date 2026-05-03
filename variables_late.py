@@ -79,9 +79,7 @@ def interpolate_fluxes(fluxes, wavelengths) -> np.ndarray:
 
 
 def apply_extinction(fluxes, a_v) -> None:
-    fluxes[:ve.n_finish] *= ve.extmod.extinguish(ve.wavelengths[:ve.n_finish]
-                                                 * u.micron,
-                                                 Av=a_v)
+    fluxes[:ve.n_finish] *= ve.extmod.extinguish(ve.wavelengths[:ve.n_finish] * u.micron, Av=a_v)
 
 
 constraint_arr = []
@@ -96,4 +94,4 @@ for constraint in ve.included:
 constraint_arr = np.array(constraint_arr)
 constraint_index = constraint_arr[:, 1].astype(int)
 l2_indices = np.setdiff1d(np.arange(len(ve.included)), constraint_index)
-unconstrained_indices = np.array(l2_indices).astype(int)#
+unconstrained_indices = np.array(l2_indices).astype(int)  #

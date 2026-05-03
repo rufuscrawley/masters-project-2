@@ -19,7 +19,7 @@ else:
 # Sets up the neural network
 
 
-best_solution = ga.run(target, 2500, 50)
+best_solution = ga.run(target, 2_000, 50)
 if not args.nomc:
-    samples = mcmc.run(target, best_solution, 3_500, 75)
+    samples = mcmc.run(target, best_solution, 2500, 60)
     mcmc.analyse_run(samples)

@@ -45,10 +45,10 @@ im_lupi = 3.0, 3900
 use_these = ft_tau
 
 included = {
-    "amin1": None,
-    "amax1": None,
+    "amin1": 0.05,
+    "amax1": 10000,
     "inclinations": None,
-    "Temp_sublimation": None,
+    "Temp_sublimation": 1500,
     "router": None,
     "height": None,
     "betadisc": None,

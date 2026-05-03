@@ -51,7 +51,7 @@ def plot_residues():
     plt.plot(v.wavelengths, (means - std), color="orange", linestyle="dashed")
     plt.plot(v.wavelengths, (means + (2 * std)), color="r", label="2$\sigma$", linestyle="dashed")
     plt.plot(v.wavelengths, (means - (2 * std)), color="r", linestyle="dashed")
-    plt.title("NN Residuals against test dataset")
+    plt.title("NN residuals against test dataset")
     plt.xlabel("Wavelength ($\mu$m)")
     plt.ylabel("Relative residual (%)")
     plt.tight_layout()
@@ -64,7 +64,7 @@ def plot_residues():
     plt.plot(v.wavelengths, (means - std), color="orange", linestyle="dashed")
     plt.plot(v.wavelengths, (means + (2 * std)), color="r", label="2$\sigma$", linestyle="dashed")
     plt.plot(v.wavelengths, (means - (2 * std)), color="r", linestyle="dashed")
-    plt.title("NN Means/StDev against test dataset")
+    plt.title("NN means/deviations against test dataset")
     plt.xlabel("Wavelength ($\mu$m)")
     plt.ylabel("Relative residual (%)")
     plt.tight_layout()
@@ -78,7 +78,7 @@ def plot_comparisons():
     x, y = data.iloc[:, :v.split], data.iloc[:, v.split:]
 
     fig, axs = plt.subplots(3, 3)
-    fig.suptitle("Example SED fits against training data set")
+    fig.suptitle("Example SED fits from test data set")
     fig.supxlabel("Wavelength ($\mu$m)")
     fig.supylabel("$\lambda$F (erg / s / cm$^2$)")
     for i in range(3):
